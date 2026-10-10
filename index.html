@@ -6,89 +6,150 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Split Ledger">
-<meta name="theme-color" content="#1e3a5f">
+<meta name="theme-color" content="#1fa085">
 <title>Split Ledger</title>
 <style>
-:root{--navy:#1e3a5f;--teal:#0f9d8a;--red:#dc2626;--bg:#f4f6fa;--ink:#1f2937;--muted:#6b7280}
+:root{--g:#1fa085;--gd:#128a70;--red:#d4500f;--ink:#1a1a1a;--muted:#6b7280;--line:#ececec;--purple:#7c4dcc}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.35}
-.top{position:sticky;top:0;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-header{background:var(--navy);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 8px 10px;font-weight:700;font-size:19px;display:flex;align-items:center;justify-content:space-between}
-header .ico{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
-header .title{flex:1;text-align:center}
-.tripbar{background:#fff;padding:8px 12px;border-bottom:1px solid #e5e7eb}
-.tripbar select{min-height:44px}
-main{max-width:640px;margin:0 auto;padding:12px 12px calc(110px + env(safe-area-inset-bottom))}
-.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-h3{margin:0 0 10px;color:var(--navy);font-size:18px}
+body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:#fff;color:var(--ink);font-size:16px;line-height:1.35}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+input,select{font-family:inherit}
+small{display:block;color:var(--muted);font-size:14px}
+b{font-weight:700}
+.g{color:var(--g)}
+.r{color:var(--red)}
+.hide{display:none!important}
+.scr{min-height:100vh;padding-bottom:110px}
+.top{position:sticky;top:0;z-index:10;background:#fff;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;min-height:64px;border-bottom:1px solid var(--line)}
+.top .ttl{flex:1;font-size:19px;font-weight:700;text-align:center}
+.top .sp{width:44px;flex:0 0 44px}
+.round{width:44px;height:44px;min-width:44px;border-radius:22px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink);padding:0;flex:0 0 auto}
+.acts2{display:flex;gap:6px;justify-content:flex-end;min-width:44px}
+.hero{background:linear-gradient(160deg,#25b394,var(--gd));color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 22px}
+.gtop{display:flex;justify-content:space-between;margin-bottom:22px}
+.hero .round{background:rgba(255,255,255,.22);border:0;color:#fff}
+.hero h2{font-size:30px;margin:0 0 14px;line-height:1.15}
+.pill{display:inline-block;background:rgba(0,0,0,.22);border-radius:20px;padding:6px 12px;font-size:14px;margin:0 6px 6px 0}
+.sumline{padding:14px 16px;font-size:18px;font-weight:600;border-bottom:1px solid var(--line)}
+.sumline span{font-weight:800}
+.bals{margin-top:6px}
+.brow{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.bals .brow{padding:8px 0;border:0}
+.brow .grow{flex:1;min-width:0}
+.item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;background:#fff}
+.item.nob{cursor:default}
+.grow{flex:1;min-width:0;word-wrap:break-word}
+.grow b{display:block;font-size:17px}
+.right{text-align:right;flex:0 0 auto}
+.right b{font-size:17px}
+.av{width:44px;height:44px;border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:16px}
+.gicon{width:44px;height:44px;border-radius:8px;background:#eef6f3;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
+.gicon.big{width:64px;height:64px;font-size:30px;border-radius:14px}
+.dt{width:44px;text-align:center;flex:0 0 auto;line-height:1.1}
+.dt small{font-size:13px;text-transform:uppercase}
+.dt b{font-size:20px}
+.chip{flex:0 0 auto;border:1px solid #cfd3d8;border-radius:20px;padding:9px 16px;background:#fff;font-weight:600;font-size:15px;min-height:40px;color:var(--ink)}
+.chip.on{background:var(--g);border-color:var(--g);color:#fff}
+.chips2{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line)}
+.empty{padding:28px 16px;color:var(--muted);text-align:center}
+.dhead{display:flex;gap:14px;align-items:flex-start;padding:18px 16px;border-bottom:1px solid var(--line)}
+.dtitle{font-size:20px;font-weight:700}
+.damt{font-size:34px;font-weight:800;margin:4px 0}
+.sec{padding:18px 16px 6px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+.lnk{font-size:16px;color:var(--gd);font-weight:600}
+.editbanner{background:#fef3c7;color:#92400e;border-radius:12px;padding:10px 12px;font-weight:600;margin-bottom:8px}
+.hint{font-size:14px;color:var(--muted);margin-top:8px}
+.hint.pos{color:var(--g);font-weight:700}
+.hint.neg{color:var(--red);font-weight:700}
+.form{padding:4px 16px 40px}
+.card{margin:12px 16px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h3{margin:0 0 10px;font-size:18px}
 label{display:block;font-size:14px;color:var(--muted);margin:14px 0 6px}
-input,select{width:100%;min-height:48px;padding:12px;font-size:16px;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:var(--ink)}
+input,select{width:100%;min-height:48px;padding:12px;font-size:16px;border:1px solid #d5d9de;border-radius:12px;background:#fff;color:var(--ink)}
 input[type=date]{-webkit-appearance:none;appearance:none;min-width:0}
 input[type=checkbox]{width:22px;height:22px;min-height:0;margin:0;flex:0 0 auto}
-button{background:var(--teal);color:#fff;border:0;border-radius:12px;min-height:48px;padding:12px 16px;font-size:17px;font-weight:600;width:100%;margin-top:12px;cursor:pointer;touch-action:manipulation}
-button:disabled{opacity:.6;cursor:wait}
-button.sm{width:auto;min-height:40px;margin:0;padding:8px 14px;font-size:15px;border-radius:10px}
-button.del{background:none;color:var(--red);width:auto;min-height:44px;margin:0;padding:8px 10px;font-size:15px}
-button.ghost{background:#eef2f7;color:var(--ink)}
-.row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;min-height:56px;padding:12px 0;border-bottom:1px solid #eef0f4;gap:8px}
-.row>div,.row>span:first-child{flex:1;min-width:0;word-wrap:break-word}
-.row small{display:block;color:var(--muted);font-size:14px}
-.acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-.acts button{width:auto;margin:0}
-.pos{color:var(--teal);font-weight:700}.neg{color:var(--red);font-weight:700}
+.btn{background:var(--g);color:#fff;border:0;border-radius:12px;min-height:50px;padding:12px 16px;font-size:17px;font-weight:700;width:100%;margin-top:14px;display:block}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.ghost{background:#eef1f4;color:var(--ink)}
+.sm{background:var(--g);color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:600;min-height:40px;width:auto;margin:0}
+.sm.ghost{background:#eef1f4;color:var(--ink)}
+.del{background:none;border:0;color:var(--red);font-size:20px;min-width:44px;min-height:44px;padding:0}
+.chipbar{width:100%;display:flex;gap:10px;margin:2px 0 6px}
+.chipbar button{flex:1}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chips label{margin:0;background:#eef2f7;color:var(--ink);min-height:44px;padding:10px 14px;border-radius:22px;font-size:16px;display:flex;gap:8px;align-items:center}
-.chipbar{width:100%;display:flex;gap:10px;margin:2px 0 6px}
-.chipbar button{flex:1;margin:0}
 .prow{display:flex;align-items:center;gap:10px;margin-top:8px}
 .prow label.pchk{margin:0;flex:1;display:flex;align-items:center;gap:10px;font-size:16px;color:var(--ink);min-height:44px}
 .prow input.pamt{width:130px;min-height:44px}
 .ro{font-size:16px;padding:10px 0}
-.hint{font-size:14px;color:var(--muted);margin-top:8px}
-.hint.pos{color:var(--teal);font-weight:700}
-.hint.neg{color:var(--red);font-weight:700}
-.lnk{font-size:15px;color:var(--navy);display:inline-block;padding:6px 0}
-.editbanner{background:#fef3c7;color:#92400e;border-radius:12px;padding:10px 12px;font-weight:600;margin-bottom:8px}
 .codebox{margin-top:12px;background:#ecfdf5;border-radius:12px;padding:14px;font-size:16px}
 code{font-size:15px;word-break:break-all}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom);z-index:6}
-nav button{flex:1;margin:0;border-radius:0;background:#fff;color:var(--muted);min-height:60px;padding:6px 2px;font-size:12px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom);z-index:9}
+nav button{flex:1;border:0;background:#fff;color:var(--muted);min-height:60px;padding:6px 2px;font-size:12px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 nav button .ic{font-size:21px;line-height:1}
-nav button.on{color:var(--navy);font-weight:700}
-.hide{display:none!important}
-#toast{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(12px);background:#1f2937;color:#fff;padding:14px 20px;border-radius:14px;font-size:16px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:20;pointer-events:none;width:max-content;max-width:90vw;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+nav button.on{color:var(--ink);font-weight:700}
+.fab{position:fixed;right:14px;bottom:calc(92px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;align-items:flex-end;z-index:8}
+.fabbtn{border:0;border-radius:30px;padding:0 20px;min-height:52px;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 16px rgba(0,0,0,.2);width:auto;margin:0}
+.fabbtn.sc{background:var(--purple)}
+.fabbtn.ad{background:var(--g)}
+#toast{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(12px);background:#1f2937;color:#fff;padding:14px 20px;border-radius:14px;font-size:16px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:20;pointer-events:none;width:max-content;max-width:90vw;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#toast.ok{background:var(--teal)}
+#toast.ok{background:var(--g)}
 #toast.err{background:var(--red)}
-#toast.busy{background:var(--navy)}
+#toast.busy{background:#374151}
 </style>
 </head>
 <body>
 
-<div class="top">
-  <header>
-    <span class="ico"></span>
-    <span class="title">💸 Split Ledger</span>
-    <span class="ico" onclick="load()">⟳</span>
-  </header>
-  <div class="tripbar"><select id="tripSel" onchange="pickTrip(this.value)"></select></div>
-</div>
-
 <div id="toast"></div>
 
-<main>
-
-<div id="login" class="card hide">
-  <h3>Enter your code</h3>
-  <label>Your personal code (from the admin)</label>
-  <input id="code" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false">
-  <button onclick="login()">Continue</button>
-</div>
-
-<div id="p-add" class="page hide">
+<!-- LOGIN -->
+<section id="s-login" class="scr hide">
+  <div class="top"><span class="sp"></span><span class="ttl">💸 Split Ledger</span><span class="sp"></span></div>
   <div class="card">
-    <h3 id="formTitle">New expense</h3>
+    <h3>Enter your code</h3>
+    <label>Your personal code (from the admin)</label>
+    <input id="code" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false">
+    <button class="btn" onclick="login()">Continue</button>
+  </div>
+</section>
+
+<!-- FRIENDS -->
+<section id="s-friends" class="scr hide">
+  <div class="top"><span class="sp"></span><span class="ttl">Friends</span><span class="round" onclick="load()" aria-label="Refresh">⟳</span></div>
+  <div class="sumline" id="friendsHead"></div>
+  <div id="friendsBody"></div>
+</section>
+
+<!-- GROUPS -->
+<section id="s-groups" class="scr hide">
+  <div class="top"><span class="sp"></span><span class="ttl">Groups</span><span class="round" onclick="load()" aria-label="Refresh">⟳</span></div>
+  <div id="groupsBody"></div>
+</section>
+
+<!-- GROUP -->
+<section id="s-group" class="scr hide">
+  <div class="hero" id="gHero"></div>
+  <div class="sumline" id="gSum"></div>
+  <div class="chips2" id="gChips"></div>
+  <div id="gBody"></div>
+</section>
+
+<!-- EXPENSE DETAIL -->
+<section id="s-detail" class="scr hide">
+  <div class="top" id="dTop"></div>
+  <div id="dBody"></div>
+</section>
+
+<!-- ADD / EDIT EXPENSE -->
+<section id="s-add" class="scr hide">
+  <div class="top">
+    <button class="round" onclick="back()" aria-label="Back">‹</button>
+    <span class="ttl" id="formTitle">New expense</span>
+    <span class="sp"></span>
+  </div>
+  <div class="form">
     <div id="editBanner" class="editbanner hide"></div>
     <label>Description</label><input id="desc" placeholder="Dinner, fuel, hotel...">
     <label>Amount ($)</label><input id="amt" type="number" inputmode="decimal" step="0.01">
@@ -105,63 +166,32 @@ nav button.on{color:var(--navy);font-weight:700}
     <div id="receiptNote" class="hint"></div>
     <label id="partLabel">Split between</label>
     <div id="parts" class="chips"></div>
-    <button id="saveBtn" data-idle="Save expense" onclick="saveExpense(this)">Save expense</button>
-    <button id="cancelEdit" class="ghost hide" onclick="cancelEdit()">Cancel edit</button>
+    <button class="btn" id="saveBtn" data-idle="Save expense" onclick="saveExpense(this)">Save expense</button>
   </div>
+</section>
+
+<!-- ACTIVITY -->
+<section id="s-activity" class="scr hide">
+  <div class="top"><span class="sp"></span><span class="ttl">Recent activity</span><span class="round" onclick="load()" aria-label="Refresh">⟳</span></div>
+  <div id="activityBody"></div>
+</section>
+
+<!-- ACCOUNT -->
+<section id="s-account" class="scr hide">
+  <div class="top"><span class="sp"></span><span class="ttl">Account</span><span class="sp"></span></div>
+  <div id="accBody"></div>
+</section>
+
+<div class="fab hide" id="fab">
+  <button class="fabbtn sc" onclick="scan()">📷 Scan</button>
+  <button class="fabbtn ad" onclick="addNew()">🧾 Add expense</button>
 </div>
 
-<div id="p-bal" class="page hide">
-  <div class="card"><h3>Who owes what</h3><div id="balList"></div></div>
-  <div class="card"><h3>Settle up (fewest payments)</h3><div id="settleList"></div></div>
-</div>
-
-<div id="p-hist" class="page hide">
-  <div class="card"><h3>Expenses</h3><div id="histList"></div></div>
-</div>
-
-<div id="p-trips" class="page hide">
-  <div class="card"><h3>Trips</h3><div id="tripList"></div></div>
-  <div class="card adminOnly">
-    <h3>New trip</h3>
-    <label>Name</label><input id="tName" placeholder="Atlanta conference">
-    <label>Type</label>
-    <select id="tType"><option>Business</option><option>Personal</option></select>
-    <label>Start date</label><input id="tStart" type="date">
-    <label>Members on this trip</label>
-    <div id="tMembers" class="chips"></div>
-    <button onclick="createTrip(this)">Create trip</button>
-  </div>
-  <div class="card adminOnly">
-    <h3>Edit members of selected trip</h3>
-    <div id="rosterChips" class="chips"></div>
-    <button onclick="saveRoster(this)">Save roster</button>
-  </div>
-  <div class="card adminOnly">
-    <h3>Member codes for this trip</h3>
-    <small style="color:var(--muted)">Tap Copy and send each code privately, one person at a time. Only you can see these codes.</small>
-    <div id="tripCodes" style="margin-top:8px"></div>
-  </div>
-</div>
-
-<div id="p-mem" class="page hide">
-  <div class="card adminOnly">
-    <h3>Add person</h3>
-    <label>Name</label><input id="mName" placeholder="Full name">
-    <button onclick="addMember(this)">Create and get code</button>
-    <div id="newCode"></div>
-  </div>
-  <div class="card"><h3>Everyone</h3><div id="memList"></div></div>
-  <div class="card"><button class="ghost" onclick="logout()">Log out on this device</button></div>
-</div>
-
-</main>
-
-<nav>
-  <button data-p="add" class="on" onclick="show('add')"><span class="ic">➕</span>Add</button>
-  <button data-p="bal" onclick="show('bal')"><span class="ic">⚖️</span>Balances</button>
-  <button data-p="hist" onclick="show('hist')"><span class="ic">🧾</span>History</button>
-  <button data-p="trips" onclick="show('trips')"><span class="ic">✈️</span>Trips</button>
-  <button data-p="mem" onclick="show('mem')"><span class="ic">👥</span>People</button>
+<nav id="nav">
+  <button data-t="friends" onclick="tab('friends')"><span class="ic">👤</span>Friends</button>
+  <button data-t="groups" onclick="tab('groups')"><span class="ic">👥</span>Groups</button>
+  <button data-t="activity" onclick="tab('activity')"><span class="ic">📊</span>Activity</button>
+  <button data-t="account" onclick="tab('account')"><span class="ic">⚙️</span>Account</button>
 </nav>
 
 <script>
@@ -174,129 +204,73 @@ const cents = x => Math.round(Number(x) * 100);
 const money = c => (c < 0 ? '-' : '') + '$' + (Math.abs(c) / 100).toFixed(2);
 const today = () => new Date().toLocaleDateString('en-CA');
 
+const COLORS = ['#e0634a','#2f80ed','#27ae60','#9b51e0','#f2994a','#00a6a6','#c0392b','#16a085','#8e44ad','#d35400'];
+const initials = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase();
+function colorFor(n) { let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
+const avatar = n => `<div class="av" style="background:${colorFor(n)}">${esc(initials(n))}</div>`;
+const CAT = { General:'🧾', Travel:'✈️', Food:'🍽️', Lodging:'🏨', Fuel:'⛽', Supplies:'🛒', Settlement:'🤝' };
+const icon = c => CAT[c] || '🧾';
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDay(d) { const p = String(d || '').split('-'); return { m: MON[(+p[1]) - 1] || '', d: +p[2] || '' }; }
+const emptyNote = t => `<div class="empty">${esc(t)}</div>`;
+
 let S = { me: null, members: [], trips: [], tripMembers: [], expenses: [], splits: [], payments: [] };
 let codeStore = localStorage.getItem('sl_code') || '';
 let tripId = localStorage.getItem('sl_trip') || '';
-let currentPage = 'add';
-let partSel = null;  // null = everyone on the trip is checked; otherwise a Set of MemberIDs
-let payerSel = null; // admin only: Set of MemberIDs who paid
-let payerAmt = {};   // admin only: memberId -> amount typed (string)
-let editId = null;   // ExpenseID being edited, or null
+let cur = { view: 'friends' };
+let stack = [];
+let curTab = 'friends';
+let groupTab = 'expenses';
+let detailId = null;
+let editId = null;
+let partSel = null;   // null = everyone on the trip is checked; otherwise a Set of MemberIDs
+let payerSel = null;  // admin only: Set of MemberIDs who paid
+let payerAmt = {};    // admin only: memberId -> amount typed (string)
 
+// ---------- DATA HELPERS ----------
 const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id === 'ADMIN' ? 'Admin' : id);
 const isAdmin = () => !!(S.me && S.me.admin);
-const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
-const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
-const paysOf = id => S.payments.filter(p => p.ExpenseID === id);
-const tripName = () => (S.trips.find(t => t.TripID === tripId) || {}).Name || 'your trip';
-const canEdit = e => isAdmin() || (e.EnteredBy === S.me.MemberID && e.Category !== 'Settlement');
+const meId = () => (S.me ? S.me.MemberID : '');
+const tripNameOf = (tid = tripId) => (S.trips.find(t => t.TripID === tid) || {}).Name || '';
+const tripMems = (tid = tripId) => S.tripMembers.filter(x => x.TripID === tid).map(x => x.MemberID);
+const expOf = (tid = tripId) => S.expenses.filter(x => x.TripID === tid);
+const paysOf = eid => S.payments.filter(p => p.ExpenseID === eid);
+const splitsOf = eid => S.splits.filter(s => s.ExpenseID === eid);
+const payersOf = e => { const p = paysOf(e.ExpenseID); return p.length ? p.map(x => ({ id: x.MemberID, c: cents(x.Amount) })) : [{ id: e.PaidBy, c: cents(e.Amount) }]; };
+const sharesOf = e => splitsOf(e.ExpenseID).map(s => ({ id: s.MemberID, c: cents(s.Share) }));
+const canEdit = e => isAdmin() || (e.EnteredBy === meId() && e.Category !== 'Settlement');
+const canDelete = e => isAdmin() || e.EnteredBy === meId();
 
-// ---------- STATUS BANNER ----------
-function toast(msg, kind = 'ok', ms = 2500) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.className = 'show ' + kind;
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => { t.className = ''; }, ms);
-}
-function hideToast() { $('toast').className = ''; }
-
-// Disables the button, shows a busy banner, then a success or error banner.
-async function run(btn, busyText, doneText, fn) {
-  const oldText = btn ? btn.textContent : '';
-  if (btn) { btn.disabled = true; btn.textContent = busyText; }
-  toast(busyText, 'busy', 30000);
-  try {
-    await fn();
-    toast(doneText, 'ok');
-  } catch (err) {
-    toast('Not saved: ' + err.message, 'err', 4500);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.idle || oldText; }
-  }
-}
-
-function show(p) {
-  currentPage = p;
-  document.querySelectorAll('.page').forEach(x => x.classList.add('hide'));
-  $('login').classList.add('hide');
-  if (p === 'login') { $('login').classList.remove('hide'); return; }
-  $('p-' + p).classList.remove('hide');
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-  window.scrollTo(0, 0);
-}
-
-function login() {
-  codeStore = $('code').value.trim().toUpperCase();
-  localStorage.setItem('sl_code', codeStore);
-  load();
-}
-
-function logout() {
-  localStorage.removeItem('sl_code');
-  codeStore = '';
-  partSel = null;
-  resetForm();
-  hideToast();
-  show('login');
-}
-
-async function load(silent = false) {
-  if (!codeStore) { show('login'); return; }
-  if (!silent) toast('Loading…', 'busy', 15000);
-  try {
-    const r = await fetch(API_URL + '?code=' + encodeURIComponent(codeStore));
-    const j = await r.json();
-    if (j.error) throw new Error(j.error);
-    S = { ...j, payments: j.payments || [] };
-    if (!S.trips.find(t => t.TripID === tripId)) tripId = S.trips.length ? S.trips[0].TripID : '';
-    localStorage.setItem('sl_trip', tripId);
-    render();
-    show(currentPage);
-    if (!silent) toast('Up to date ✓', 'ok', 1500);
-  } catch (err) {
-    if (String(err.message).includes('Invalid code')) {
-      localStorage.removeItem('sl_code');
-      codeStore = '';
-      show('login');
-    }
-    toast('Could not load: ' + err.message, 'err', 4500);
-  }
-}
-
-async function api(action, payload) {
-  const r = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ code: codeStore, action, ...payload })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j;
-}
-
-function pickTrip(id) {
-  if (editId) resetForm();
-  tripId = id;
-  partSel = null;
-  payerSel = null;
-  payerAmt = {};
-  localStorage.setItem('sl_trip', id);
-  render();
-}
-
-// Net per person in cents. Positive = gets back, negative = owes.
-function balances() {
+// Net per person inside one group, in cents. Positive = gets back, negative = owes.
+function tripBalances(tid = tripId) {
   const net = {};
   const add = (id, v) => { net[id] = (net[id] || 0) + v; };
-  tripMems().forEach(id => add(id, 0));
-  tripExp().forEach(e => {
-    const pays = paysOf(e.ExpenseID);
-    if (pays.length) pays.forEach(p => add(p.MemberID, cents(p.Amount)));
-    else add(e.PaidBy, cents(e.Amount));
+  tripMems(tid).forEach(id => add(id, 0));
+  expOf(tid).forEach(e => {
+    payersOf(e).forEach(p => add(p.id, p.c));
+    sharesOf(e).forEach(s => add(s.id, -s.c));
   });
-  S.splits.filter(s => s.TripID === tripId).forEach(s => add(s.MemberID, -cents(s.Share)));
   return net;
+}
+
+// Pairwise net with me across every expense that passes the filter.
+// Positive = that person owes me. Negative = I owe them.
+function pairBalances(filter = () => true) {
+  const me = meId(), flow = {};
+  S.expenses.filter(filter).forEach(e => {
+    const total = cents(e.Amount);
+    if (!total) return;
+    const pays = payersOf(e), shs = sharesOf(e);
+    pays.forEach(p => shs.forEach(s => {
+      if (p.id === s.id) return;
+      const amt = p.c * s.c / total;
+      if (p.id === me) flow[s.id] = (flow[s.id] || 0) + amt;
+      else if (s.id === me) flow[p.id] = (flow[p.id] || 0) - amt;
+    }));
+  });
+  const out = {};
+  Object.entries(flow).forEach(([id, v]) => { const r = Math.round(v); if (r) out[id] = r; });
+  return out;
 }
 
 // Greedy settle-up: fewest payments that clear every balance.
@@ -319,18 +293,399 @@ function settle(net) {
   return result;
 }
 
-function render() {
-  $('tripSel').innerHTML = S.trips.length
-    ? S.trips.map(t => `<option value="${esc(t.TripID)}" ${t.TripID === tripId ? 'selected' : ''}>${esc(t.Name)} (${esc(t.Type)})</option>`).join('')
-    : '<option value="">No trips yet. Create one in Trips.</option>';
-  document.querySelectorAll('.adminOnly').forEach(el => el.classList.toggle('hide', !isAdmin()));
-  renderAdd(); renderBal(); renderHist(); renderTrips(); renderTripCodes(); renderPeople();
+// ---------- BANNER + NETWORK ----------
+function toast(msg, kind = 'ok', ms = 2500) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + kind;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.className = ''; }, ms);
 }
 
+// Disables the button, shows a busy banner, then success or error.
+async function run(btn, busyText, doneText, fn) {
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = busyText; }
+  toast(busyText, 'busy', 30000);
+  try {
+    await fn();
+    toast(doneText, 'ok');
+  } catch (err) {
+    toast('Not saved: ' + err.message, 'err', 4500);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.idle || oldText; }
+  }
+}
+
+async function api(action, payload) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ code: codeStore, action, ...payload })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+
+async function load(silent = false) {
+  if (!codeStore) { cur = { view: 'login' }; stack = []; draw(); return; }
+  if (!silent) toast('Loading…', 'busy', 15000);
+  try {
+    const r = await fetch(API_URL + '?code=' + encodeURIComponent(codeStore));
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    S = { ...j, payments: j.payments || [] };
+    if (!S.trips.find(t => t.TripID === tripId)) tripId = S.trips.length ? S.trips[0].TripID : '';
+    localStorage.setItem('sl_trip', tripId);
+    if (cur.view === 'login') cur = { view: 'friends' };
+    draw();
+    if (!silent) toast('Up to date ✓', 'ok', 1500);
+  } catch (err) {
+    if (String(err.message).includes('Invalid code')) {
+      localStorage.removeItem('sl_code');
+      codeStore = '';
+      cur = { view: 'login' };
+      stack = [];
+      draw();
+    }
+    toast('Could not load: ' + err.message, 'err', 4500);
+  }
+}
+
+function login() {
+  codeStore = $('code').value.trim().toUpperCase();
+  localStorage.setItem('sl_code', codeStore);
+  load();
+}
+
+function logout() {
+  localStorage.removeItem('sl_code');
+  codeStore = '';
+  stack = [];
+  partSel = null;
+  resetForm();
+  cur = { view: 'login' };
+  draw();
+}
+
+// ---------- NAVIGATION ----------
+function tab(t) { curTab = t; stack = []; cur = { view: t }; draw(); }
+function push(view) { stack.push(cur); cur = { view }; draw(); }
+function back() {
+  const leaving = cur.view;
+  cur = stack.length ? stack.pop() : { view: curTab };
+  if (leaving === 'add') resetForm();
+  draw();
+}
+
+function draw() {
+  if (!codeStore) cur = { view: 'login' };
+  const v = cur.view;
+  document.querySelectorAll('.scr').forEach(s => s.classList.add('hide'));
+  $('s-' + v).classList.remove('hide');
+  $('nav').classList.toggle('hide', v === 'login' || v === 'add');
+  $('fab').classList.toggle('hide', !['friends', 'groups', 'activity', 'group'].includes(v));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === curTab));
+  if (v === 'friends') renderFriends();
+  else if (v === 'groups') renderGroups();
+  else if (v === 'activity') renderActivity();
+  else if (v === 'group') renderGroup();
+  else if (v === 'detail') renderDetail();
+  else if (v === 'add') renderAdd();
+  else if (v === 'account') renderAccount();
+  window.scrollTo(0, 0);
+}
+
+function openGroup(tid) {
+  tripId = tid;
+  localStorage.setItem('sl_trip', tid);
+  groupTab = 'expenses';
+  push('group');
+}
+
+function openDetail(id) {
+  detailId = id;
+  push('detail');
+}
+
+function pickTrip(id) {
+  if (editId) resetForm();
+  tripId = id;
+  partSel = null;
+  payerSel = null;
+  payerAmt = {};
+  localStorage.setItem('sl_trip', id);
+  draw();
+}
+
+function setGroupTab(k) { groupTab = k; draw(); }
+
+// ---------- RENDER: FRIENDS / GROUPS / ACTIVITY ----------
+function balRow(id, v, adminView) {
+  const label = adminView
+    ? (v > 0 ? 'gets back' : 'owes')
+    : (v > 0 ? 'owes you' : 'you owe');
+  return `<div class="brow">${avatar(nameOf(id))}<div class="grow"><b>${esc(nameOf(id))}</b></div><div class="right ${v > 0 ? 'g' : 'r'}"><small class="${v > 0 ? 'g' : 'r'}">${label}</small><b>${money(Math.abs(v))}</b></div></div>`;
+}
+
+function renderFriends() {
+  if (isAdmin()) {
+    $('friendsHead').innerHTML = tripId ? `Admin view · <b>${esc(tripNameOf())}</b>` : 'Open a group in Groups first';
+    const tb = tripBalances(tripId);
+    const ids = Object.keys(tb).filter(id => tb[id] !== 0);
+    $('friendsBody').innerHTML = ids.length
+      ? ids.map(id => balRow(id, tb[id], true)).join('')
+      : emptyNote('Everyone is settled up in this group ✅');
+    return;
+  }
+  const pb = pairBalances();
+  const ids = Object.keys(pb).filter(id => pb[id] !== 0).sort((a, b) => Math.abs(pb[b]) - Math.abs(pb[a]));
+  const total = ids.reduce((t, id) => t + pb[id], 0);
+  $('friendsHead').innerHTML = total > 0
+    ? `Overall, you are owed <span class="g">${money(total)}</span>`
+    : total < 0 ? `Overall, you owe <span class="r">${money(-total)}</span>`
+    : 'You are all settled up ✅';
+  $('friendsBody').innerHTML = ids.length
+    ? ids.map(id => balRow(id, pb[id], false)).join('')
+    : emptyNote('No balances yet. Tap Add expense to get started.');
+}
+
+function renderGroups() {
+  const admin = isAdmin(), me = meId();
+  $('groupsBody').innerHTML = S.trips.map(t => {
+    const n = tripMems(t.TripID).length;
+    const total = expOf(t.TripID).reduce((s, e) => s + cents(e.Amount), 0);
+    let right = '';
+    if (!admin) {
+      const net = tripBalances(t.TripID)[me] || 0;
+      right = net > 0 ? `<small class="g">you are owed</small><b class="g">${money(net)}</b>`
+        : net < 0 ? `<small class="r">you owe</small><b class="r">${money(-net)}</b>`
+        : `<small>settled up</small>`;
+    }
+    return `<div class="item" onclick="openGroup('${esc(t.TripID)}')">
+      <div class="gicon">✈️</div>
+      <div class="grow"><b>${esc(t.Name)}</b><small>${esc(t.Type)} · ${n} people · ${money(total)} total</small></div>
+      <div class="right">${right}</div>
+    </div>`;
+  }).join('') || emptyNote(admin ? 'No groups yet. Create one in Account.' : 'You are not on any group yet.');
+}
+
+function renderActivity() {
+  const me = meId();
+  $('activityBody').innerHTML = [...S.expenses].reverse().map(e => {
+    let line = '', cls = '';
+    if (isAdmin()) {
+      line = `Paid by ${esc(payersOf(e).map(p => nameOf(p.id)).join(', '))}`;
+    } else {
+      const paid = payersOf(e).filter(p => p.id === me).reduce((t, p) => t + p.c, 0);
+      const share = sharesOf(e).filter(s => s.id === me).reduce((t, s) => t + s.c, 0);
+      const net = paid - share;
+      line = net > 0 ? `You get back ${money(net)}` : net < 0 ? `You owe ${money(-net)}` : 'Not involved';
+      cls = net > 0 ? 'g' : net < 0 ? 'r' : '';
+    }
+    return `<div class="item" onclick="openDetail('${esc(e.ExpenseID)}')">
+      <div class="gicon">${icon(e.Category)}</div>
+      <div class="grow">
+        <div><b>${esc(nameOf(e.EnteredBy))}</b> added <b>"${esc(e.Description)}"</b></div>
+        <small>${esc(tripNameOf(e.TripID))} · ${esc(e.Date)}</small>
+      </div>
+      <div class="right"><small class="${cls}">${line}</small></div>
+    </div>`;
+  }).join('') || emptyNote('No activity yet.');
+}
+
+// ---------- RENDER: GROUP ----------
+function expRow(e) {
+  const f = fmtDay(e.Date), me = meId();
+  let right = '';
+  if (isAdmin()) {
+    right = `<small>Total</small><b>${money(cents(e.Amount))}</b>`;
+  } else {
+    const paid = payersOf(e).filter(p => p.id === me).reduce((t, p) => t + p.c, 0);
+    const share = sharesOf(e).filter(s => s.id === me).reduce((t, s) => t + s.c, 0);
+    const net = paid - share;
+    right = net > 0 ? `<small class="g">you lent</small><b class="g">${money(net)}</b>`
+      : net < 0 ? `<small class="r">you borrowed</small><b class="r">${money(-net)}</b>`
+      : `<small>not involved</small>`;
+  }
+  const payText = e.Category === 'Settlement'
+    ? 'Settle up'
+    : 'Paid by ' + payersOf(e).map(p => nameOf(p.id)).join(', ');
+  return `<div class="item" onclick="openDetail('${esc(e.ExpenseID)}')">
+    <div class="dt"><small>${esc(f.m)}</small><b>${esc(f.d)}</b></div>
+    <div class="gicon">${icon(e.Category)}</div>
+    <div class="grow"><b>${esc(e.Description)}</b><small>${esc(payText)}</small></div>
+    <div class="right">${right}</div>
+  </div>`;
+}
+
+function renderGroup() {
+  const t = S.trips.find(x => x.TripID === tripId);
+  if (!t) { tab('groups'); return; }
+  const admin = isAdmin(), me = meId();
+  const tb = tripBalances(tripId);
+
+  $('gHero').innerHTML = `
+    <div class="gtop">
+      <button class="round" onclick="back()" aria-label="Back">‹</button>
+      ${admin ? `<button class="round" onclick="tab('account')" aria-label="Settings">⚙︎</button>` : '<span></span>'}
+    </div>
+    <h2>${esc(t.Name)}</h2>
+    <span class="pill">${esc(t.StartDate || 'No start date')}</span><span class="pill">👥 ${tripMems().length} people</span>`;
+
+  let sum = '', rows = '';
+  if (admin) {
+    sum = `<span>Admin view</span>`;
+    rows = Object.keys(tb).filter(id => tb[id] !== 0).map(id => balRow(id, tb[id], true)).join('');
+  } else {
+    const pb = pairBalances(e => e.TripID === tripId);
+    const total = Object.values(pb).reduce((a, b) => a + b, 0);
+    sum = total > 0 ? `You are owed <span class="g">${money(total)}</span> overall`
+      : total < 0 ? `You owe <span class="r">${money(-total)}</span> overall`
+      : `You're all settled up in this group ✅`;
+    rows = Object.keys(pb).filter(id => pb[id] !== 0).map(id => balRow(id, pb[id], false)).join('');
+  }
+  $('gSum').innerHTML = sum + (rows ? `<div class="bals">${rows}</div>` : '');
+
+  const chip = (k, label) => `<button class="chip ${groupTab === k ? 'on' : ''}" onclick="setGroupTab('${k}')">${label}</button>`;
+  $('gChips').innerHTML = chip('expenses', 'Expenses') + chip('settle', 'Settle up') + chip('balances', 'Balances');
+
+  let body = '';
+  if (groupTab === 'expenses') {
+    body = expOf(tripId).slice().reverse().map(expRow).join('') || emptyNote('No expenses yet. Tap Add expense.');
+  } else if (groupTab === 'settle') {
+    const plan = settle(tb);
+    body = plan.length
+      ? plan.map(p => {
+          const mine = admin || p.from === me;
+          return `<div class="item nob">${avatar(nameOf(p.from))}
+            <div class="grow"><b>${esc(nameOf(p.from))} pays ${esc(nameOf(p.to))}</b><small>${money(p.amt)}</small></div>
+            ${mine ? `<button class="sm" onclick="settleUp(this,'${esc(p.from)}','${esc(p.to)}',${p.amt})">Mark paid</button>` : ''}
+          </div>`;
+        }).join('')
+      : emptyNote('Everyone is settled up ✅');
+  } else {
+    body = Object.keys(tb).map(id => `<div class="item nob">${avatar(nameOf(id))}
+      <div class="grow"><b>${esc(nameOf(id))}</b></div>
+      <div class="right"><small class="${tb[id] >= 0 ? 'g' : 'r'}">${tb[id] >= 0 ? 'gets back' : 'owes'}</small><b class="${tb[id] >= 0 ? 'g' : 'r'}">${money(Math.abs(tb[id]))}</b></div>
+    </div>`).join('') || emptyNote('No balances yet.');
+  }
+  $('gBody').innerHTML = body;
+}
+
+// ---------- RENDER: EXPENSE DETAIL ----------
+function renderDetail() {
+  const e = S.expenses.find(x => x.ExpenseID === detailId);
+  if (!e) { back(); return; }
+  const me = meId(), id = esc(e.ExpenseID);
+
+  $('dTop').innerHTML = `
+    <button class="round" onclick="back()" aria-label="Back">‹</button>
+    <span class="ttl">Details</span>
+    <span class="acts2">
+      ${canEdit(e) ? `<button class="round" onclick="editExp('${id}')" aria-label="Edit">✏️</button>` : ''}
+      ${canDelete(e) ? `<button class="round" onclick="delFromDetail(this)" aria-label="Delete">🗑️</button>` : ''}
+    </span>`;
+
+  const pays = payersOf(e), shs = sharesOf(e);
+  const isSettle = e.Category === 'Settlement';
+
+  const paidHtml = pays.map(p => `<div class="item nob">${avatar(nameOf(p.id))}
+      <div class="grow"><b>${esc(p.id === me ? 'You' : nameOf(p.id))}</b><small>paid</small></div>
+      <div class="right"><b>${money(p.c)}</b></div></div>`).join('');
+
+  const shareHtml = shs.map(s => `<div class="item nob">${avatar(nameOf(s.id))}
+      <div class="grow"><b>${esc(s.id === me ? 'You' : nameOf(s.id))}</b><small>owes</small></div>
+      <div class="right"><b>${money(s.c)}</b></div></div>`).join('');
+
+  let mine = '';
+  if (!isAdmin()) {
+    const paid = pays.filter(p => p.id === me).reduce((t, p) => t + p.c, 0);
+    const share = shs.filter(s => s.id === me).reduce((t, s) => t + s.c, 0);
+    const net = paid - share;
+    mine = net > 0 ? `<div class="sec">Your balance</div><div class="item nob"><div class="grow"><b class="g">You get back ${money(net)}</b></div></div>`
+      : net < 0 ? `<div class="sec">Your balance</div><div class="item nob"><div class="grow"><b class="r">You owe ${money(-net)}</b></div></div>`
+      : '';
+  }
+
+  $('dBody').innerHTML = `
+    <div class="dhead">
+      <div class="gicon big">${icon(e.Category)}</div>
+      <div class="grow">
+        <div class="dtitle">${esc(isSettle ? 'Payment' : e.Description)}</div>
+        ${isSettle ? `<small>${esc(e.Description)}</small>` : ''}
+        <div class="damt">${money(cents(e.Amount))}</div>
+        <small>${esc(tripNameOf(e.TripID))} · ${esc(e.Date)} · ${esc(e.Category)}</small>
+        <small>Added by ${esc(nameOf(e.EnteredBy))}${e.Created ? ' on ' + esc(String(e.Created).slice(0, 10)) : ''}</small>
+      </div>
+    </div>
+    ${e.ReceiptURL ? `<div class="item nob"><a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 View receipt</a></div>` : ''}
+    <div class="sec">Paid</div>${paidHtml}
+    <div class="sec">Split</div>${shareHtml}
+    ${mine}
+    <div class="sec">Notes</div>
+    <div class="empty">Edits replace the saved values. This version doesn't keep a change log yet.</div>`;
+}
+
+// ---------- RENDER: ACCOUNT ----------
+function renderAccount() {
+  const me = S.me;
+  if (!me) return;
+  let html = `<div class="card">
+      <div class="item nob" style="padding:0">${avatar(me.Name)}<div class="grow"><b>${esc(me.Name)}</b><small>${me.admin ? 'Admin' : 'Member'}</small></div></div>
+      <button class="btn ghost" onclick="logout()">Log out on this device</button>
+    </div>`;
+
+  if (isAdmin()) {
+    html += `
+    <div class="card"><h3>Selected group</h3>
+      <select onchange="pickTrip(this.value)">
+        ${S.trips.map(t => `<option value="${esc(t.TripID)}" ${t.TripID === tripId ? 'selected' : ''}>${esc(t.Name)} (${esc(t.Type)})</option>`).join('')}
+      </select>
+    </div>
+    <div class="card"><h3>New trip</h3>
+      <label>Name</label><input id="tName" placeholder="Atlanta conference">
+      <label>Type</label>
+      <select id="tType"><option>Business</option><option>Personal</option></select>
+      <label>Start date</label><input id="tStart" type="date">
+      <label>Members on this trip</label>
+      <div id="tMembers" class="chips"></div>
+      <button class="btn" onclick="createTrip(this)">Create trip</button>
+    </div>
+    <div class="card"><h3>Members of selected group</h3>
+      <div id="rosterChips" class="chips"></div>
+      <button class="btn" onclick="saveRoster(this)">Save roster</button>
+    </div>
+    <div class="card"><h3>Member codes</h3>
+      <small>Send each code privately, one person at a time.</small>
+      <div id="tripCodes" style="margin-top:8px"></div>
+    </div>
+    <div class="card"><h3>Add person</h3>
+      <label>Name</label><input id="mName" placeholder="Full name">
+      <button class="btn" onclick="addMember(this)">Create and get code</button>
+      <div id="newCode"></div>
+    </div>`;
+  }
+  $('accBody').innerHTML = html;
+
+  if (!isAdmin()) return;
+  $('tMembers').innerHTML = S.members.map(m =>
+    `<label><input type="checkbox" class="tm" value="${esc(m.MemberID)}" checked>${esc(m.Name)}</label>`).join('');
+  $('rosterChips').innerHTML = S.members.map(m => {
+    const on = S.tripMembers.some(x => x.TripID === tripId && x.MemberID === m.MemberID);
+    return `<label><input type="checkbox" class="rm" value="${esc(m.MemberID)}" ${on ? 'checked' : ''}>${esc(m.Name)}</label>`;
+  }).join('');
+  $('tripCodes').innerHTML = tripMems().map(id => S.members.find(m => m.MemberID === id)).filter(Boolean).map(m =>
+    `<div class="item nob" style="padding:10px 0">${avatar(m.Name)}
+      <div class="grow"><b>${esc(m.Name)}</b><small>Code: <code>${esc(m.Code || '')}</code></small></div>
+      <button class="sm ghost" data-id="${esc(m.MemberID)}" onclick="copyInvite(this)">Copy</button>
+    </div>`).join('') || '<small>Pick members and save the roster first.</small>';
+}
+
+// ---------- RENDER: ADD / EDIT FORM ----------
 function renderAdd() {
   const ids = tripMems();
-
-  // Split between
   if (partSel) partSel = new Set([...partSel].filter(id => ids.includes(id)));
   const checkedCount = ids.filter(id => !partSel || partSel.has(id)).length;
   $('partLabel').textContent = `Split between (${checkedCount} of ${ids.length} selected)`;
@@ -338,12 +693,10 @@ function renderAdd() {
     ? `<div class="chipbar"><button type="button" class="sm ghost" onclick="setParts(true)">Select all</button><button type="button" class="sm ghost" onclick="setParts(false)">Clear</button></div>` +
       ids.map(id => `<label><input type="checkbox" value="${esc(id)}" ${(!partSel || partSel.has(id)) ? 'checked' : ''}>${esc(nameOf(id))}</label>`).join('')
     : '<small>No members on this trip yet</small>';
-
   renderPayers();
 }
 
-// Admin: choose any number of payers and the exact amount each one paid.
-// Members: always paid by themselves for the full amount.
+// Admin: any number of payers with exact amounts. Members: always themselves, full amount.
 function renderPayers() {
   const box = $('payerBox');
   if (!isAdmin()) {
@@ -354,7 +707,6 @@ function renderPayers() {
   if (!payerSel) payerSel = new Set(ids.length ? [ids[0]] : []);
   payerSel = new Set([...payerSel].filter(id => ids.includes(id)));
 
-  // One payer: fill their amount with the full total if it's empty
   const total = cents(parseFloat($('amt').value) || 0);
   if (payerSel.size === 1) {
     const id = [...payerSel][0];
@@ -370,8 +722,7 @@ function renderPayers() {
         <input class="pamt" data-id="${esc(id)}" type="number" inputmode="decimal" step="0.01" placeholder="0.00"
           value="${on ? esc(payerAmt[id] || '') : ''}" ${on ? '' : 'disabled'}>
       </div>`;
-    }).join('') +
-    `<div id="payHint" class="hint"></div>`;
+    }).join('') + `<div id="payHint" class="hint"></div>`;
   updatePayHint();
 }
 
@@ -409,20 +760,17 @@ function splitPayersEvenly() {
   renderPayers();
 }
 
-// Select all or clear the split group, then refresh the count
 function setParts(on) {
   partSel = on ? new Set(tripMems()) : new Set();
   renderAdd();
 }
 
-// Remember the group the user ticks so it carries over to the next expense
 $('parts').addEventListener('change', () => {
   const ids = tripMems();
   partSel = new Set([...document.querySelectorAll('#parts input:checked')].map(i => i.value));
   $('partLabel').textContent = `Split between (${ids.filter(id => partSel.has(id)).length} of ${ids.length} selected)`;
 });
 
-// Payer checkboxes: a newly ticked payer gets whatever is still unassigned
 $('payerBox').addEventListener('change', e => {
   if (!e.target.classList.contains('pay')) return;
   const id = e.target.value;
@@ -439,14 +787,12 @@ $('payerBox').addEventListener('change', e => {
   renderPayers();
 });
 
-// Payer amounts: store as typed and refresh the hint without rebuilding the box
 $('payerBox').addEventListener('input', e => {
   if (!e.target.classList.contains('pamt')) return;
   payerAmt[e.target.dataset.id] = e.target.value;
   updatePayHint();
 });
 
-// Total amount: with one payer, that payer follows the total automatically
 $('amt').addEventListener('input', () => {
   if (isAdmin() && payerSel && payerSel.size === 1) {
     const id = [...payerSel][0];
@@ -457,104 +803,18 @@ $('amt').addEventListener('input', () => {
   updatePayHint();
 });
 
-function renderBal() {
-  const b = balances();
-  $('balList').innerHTML = Object.keys(b).map(id =>
-    `<div class="row"><span>${esc(nameOf(id))}</span><span class="${b[id] >= 0 ? 'pos' : 'neg'}">${b[id] >= 0 ? 'gets back ' : 'owes '}${money(Math.abs(b[id]))}</span></div>`
-  ).join('') || '<small>No expenses yet</small>';
-
-  const plan = settle(b);
-  $('settleList').innerHTML = plan.length
-    ? plan.map(p => {
-        const mine = isAdmin() || p.from === S.me.MemberID;
-        return `<div class="row"><div><b>${esc(nameOf(p.from))}</b> pays <b>${esc(nameOf(p.to))}</b><small>${money(p.amt)}</small></div>${mine ? `<button class="sm" onclick="settleUp(this,'${esc(p.from)}','${esc(p.to)}',${p.amt})">Mark paid</button>` : ''}</div>`;
-      }).join('')
-    : '<small>Everyone is square ✅</small>';
+// ---------- FORM ACTIONS ----------
+function addNew() {
+  if (!tripId) { toast('Open a group first', 'err', 3000); return; }
+  resetForm();
+  push('add');
 }
 
-function renderHist() {
-  $('histList').innerHTML = [...tripExp()].reverse().map(e => {
-    const pays = paysOf(e.ExpenseID);
-    const payText = pays.length
-      ? pays.map(p => `${nameOf(p.MemberID)} ${money(cents(p.Amount))}`).join(', ')
-      : `${nameOf(e.PaidBy)} ${money(cents(e.Amount))}`;
-    const mine = isAdmin() || e.EnteredBy === S.me.MemberID;
-    const editable = canEdit(e);
-    const id = esc(e.ExpenseID);
-    return `<div class="row">
-      <div><b>${esc(e.Description)}</b>
-        <small>${esc(e.Date)} · Paid: ${esc(payText)} · Total ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
-        ${e.ReceiptURL ? `<a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 Receipt</a>` : ''}
-      </div>
-      ${(editable || mine) ? `<div class="acts">
-        ${editable ? `<button class="sm ghost" onclick="editExp('${id}')">Edit</button>` : ''}
-        ${mine ? `<button class="del" onclick="delExp(this,'${id}')">Delete</button>` : ''}
-      </div>` : ''}
-    </div>`;
-  }).join('') || '<small>No expenses yet</small>';
+function scan() {
+  addNew();
+  if (cur.view === 'add') $('receipt').click();
 }
 
-function renderTrips() {
-  $('tripList').innerHTML = S.trips.map(t => {
-    const count = S.tripMembers.filter(x => x.TripID === t.TripID).length;
-    return `<div class="row" style="cursor:pointer" onclick="pickTrip('${esc(t.TripID)}')">
-      <div><b>${esc(t.Name)}</b><small>${esc(t.Type)} · ${esc(t.StartDate || 'no date')} · ${count} people</small></div>
-      ${t.TripID === tripId ? '<span class="pos">Selected</span>' : ''}
-    </div>`;
-  }).join('') || '<small>No trips yet</small>';
-
-  $('tMembers').innerHTML = S.members.map(m =>
-    `<label><input type="checkbox" class="tm" value="${esc(m.MemberID)}" checked>${esc(m.Name)}</label>`).join('');
-  $('rosterChips').innerHTML = S.members.map(m => {
-    const on = S.tripMembers.some(x => x.TripID === tripId && x.MemberID === m.MemberID);
-    return `<label><input type="checkbox" class="rm" value="${esc(m.MemberID)}" ${on ? 'checked' : ''}>${esc(m.Name)}</label>`;
-  }).join('');
-}
-
-// Admin-only: one row per person on the selected trip, each with a Copy button.
-function renderTripCodes() {
-  if (!isAdmin()) return;
-  const people = tripMems().map(id => S.members.find(m => m.MemberID === id)).filter(Boolean);
-  $('tripCodes').innerHTML = people.map(m =>
-    `<div class="row">
-      <div><b>${esc(m.Name)}</b><small>Code: <code>${esc(m.Code || '')}</code></small></div>
-      <button class="sm ghost" data-id="${esc(m.MemberID)}" onclick="copyInvite(this)">Copy</button>
-    </div>`
-  ).join('') || '<small>Pick members for this trip above, then save the roster.</small>';
-}
-
-function renderPeople() {
-  $('memList').innerHTML = S.members.map(m =>
-    `<div class="row"><div><b>${esc(m.Name)}</b>${m.Code ? `<small>Code: <code>${esc(m.Code)}</code></small>` : ''}</div></div>`
-  ).join('') || '<small>No people yet</small>';
-}
-
-// ---------- COPY HELPERS ----------
-function inviteText(m) {
-  return `Hi ${m.Name}, you're invited to ${tripName()} on Split Ledger.\nOpen: ${APP_URL}\nYour code: ${m.Code}`;
-}
-
-async function copyToClipboard(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-  }
-}
-
-async function copyInvite(btn) {
-  const m = S.members.find(x => x.MemberID === btn.dataset.id);
-  if (!m || !m.Code) { toast('No code for this person', 'err', 3000); return; }
-  await copyToClipboard(inviteText(m));
-  toast('Copied for ' + m.Name + ' ✅', 'ok', 2000);
-}
-
-// ---------- EDIT MODE ----------
 function editExp(id) {
   const e = S.expenses.find(x => x.ExpenseID === id);
   if (!e) { toast('Expense not found', 'err', 3000); return; }
@@ -563,29 +823,25 @@ function editExp(id) {
   $('desc').value = e.Description;
   $('amt').value = Number(e.Amount).toFixed(2);
   $('date').value = e.Date || today();
-
   if (![...$('cat').options].some(o => o.value === e.Category)) $('cat').add(new Option(e.Category, e.Category));
   $('cat').value = e.Category || 'General';
 
-  // Payers: load the exact amounts saved for this expense
   const pays = paysOf(id);
   payerSel = new Set(pays.length ? pays.map(p => p.MemberID) : [e.PaidBy]);
   payerAmt = {};
   if (pays.length) pays.forEach(p => { payerAmt[p.MemberID] = Number(p.Amount).toFixed(2); });
   else payerAmt[e.PaidBy] = Number(e.Amount).toFixed(2);
 
-  partSel = new Set(S.splits.filter(s => s.ExpenseID === id).map(s => s.MemberID));
-  renderAdd();
+  partSel = new Set(splitsOf(id).map(s => s.MemberID));
 
   $('receipt').value = '';
   $('receiptNote').textContent = e.ReceiptURL ? 'Current receipt is kept unless you pick a new photo.' : '';
   $('formTitle').textContent = 'Edit expense';
   $('editBanner').textContent = `Editing: ${e.Description}`;
   $('editBanner').classList.remove('hide');
-  $('cancelEdit').classList.remove('hide');
   $('saveBtn').dataset.idle = 'Update expense';
   $('saveBtn').textContent = 'Update expense';
-  show('add');
+  push('add');
 }
 
 function resetForm() {
@@ -599,23 +855,15 @@ function resetForm() {
   $('receiptNote').textContent = '';
   $('formTitle').textContent = 'New expense';
   $('editBanner').classList.add('hide');
-  $('cancelEdit').classList.add('hide');
   $('saveBtn').dataset.idle = 'Save expense';
   $('saveBtn').textContent = 'Save expense';
 }
 
-function cancelEdit() {
-  resetForm();
-  renderAdd();
-  toast('Edit cancelled', 'ok', 1800);
-}
-
-// ---------- ACTIONS ----------
 async function saveExpense(btn) {
   const desc = $('desc').value.trim();
   const amt = parseFloat($('amt').value);
   const people = [...document.querySelectorAll('#parts input:checked')].map(i => i.value);
-  if (!tripId) { toast('Create or pick a trip first', 'err', 4000); return; }
+  if (!tripId) { toast('Create or pick a group first', 'err', 4000); return; }
   if (!desc || !(amt > 0) || !people.length) {
     toast('Add a description, an amount, and at least one person', 'err', 4000);
     return;
@@ -634,10 +882,9 @@ async function saveExpense(btn) {
       return;
     }
   } else {
-    payers = [{ memberId: S.me.MemberID, amount: total / 100 }];
+    payers = [{ memberId: meId(), amount: total / 100 }];
   }
 
-  // Equal split among the people checked under Split between
   const base = Math.floor(total / people.length);
   const extra = total - base * people.length;
   const shares = people.map((id, i) => ({ memberId: id, share: (base + (i < extra ? 1 : 0)) / 100 }));
@@ -655,9 +902,34 @@ async function saveExpense(btn) {
     };
     if (editing) await api('updateExpense', { ...payload, id: idToEdit });
     else await api('addExpense', payload);
-
     resetForm();
-    show('bal');
+    back();
+    await load(true);
+  });
+}
+
+async function delFromDetail(btn) {
+  const id = detailId;
+  if (!id) return;
+  if (!confirm('Delete this expense?')) return;
+  await run(btn, 'Deleting…', 'Expense deleted 🗑️', async () => {
+    await api('deleteExpense', { id });
+    detailId = null;
+    back();
+    await load(true);
+  });
+}
+
+async function settleUp(btn, from, to, amtCents) {
+  if (!confirm(`Record ${nameOf(from)} paying ${nameOf(to)} ${money(amtCents)}?`)) return;
+  await run(btn, 'Recording…', 'Payment recorded ✅', async () => {
+    await api('addExpense', {
+      tripId, date: today(),
+      description: `Settle: ${nameOf(from)} → ${nameOf(to)}`,
+      payers: [{ memberId: from, amount: amtCents / 100 }],
+      amount: amtCents / 100, category: 'Settlement',
+      shares: [{ memberId: to, share: amtCents / 100 }]
+    });
     await load(true);
   });
 }
@@ -682,29 +954,7 @@ function compress(file) {
   });
 }
 
-async function settleUp(btn, from, to, amtCents) {
-  if (!confirm(`Record ${nameOf(from)} paying ${nameOf(to)} ${money(amtCents)}?`)) return;
-  await run(btn, 'Recording…', 'Payment recorded ✅', async () => {
-    await api('addExpense', {
-      tripId, date: today(),
-      description: `Settle: ${nameOf(from)} → ${nameOf(to)}`,
-      payers: [{ memberId: from, amount: amtCents / 100 }],
-      amount: amtCents / 100, category: 'Settlement',
-      shares: [{ memberId: to, share: amtCents / 100 }]
-    });
-    await load(true);
-  });
-}
-
-async function delExp(btn, id) {
-  if (!confirm('Delete this expense?')) return;
-  await run(btn, 'Deleting…', 'Expense deleted 🗑️', async () => {
-    await api('deleteExpense', { id });
-    if (editId === id) resetForm();
-    await load(true);
-  });
-}
-
+// ---------- ACCOUNT ACTIONS (admin) ----------
 async function createTrip(btn) {
   const name = $('tName').value.trim();
   if (!name) { toast('Name the trip first', 'err', 3000); return; }
@@ -714,13 +964,12 @@ async function createTrip(btn) {
     tripId = r.tripId;
     partSel = null;
     payerSel = null;
-    $('tName').value = '';
     await load(true);
   });
 }
 
 async function saveRoster(btn) {
-  if (!tripId) { toast('Pick a trip first', 'err', 3000); return; }
+  if (!tripId) { toast('Pick a group first', 'err', 3000); return; }
   const memberIds = [...document.querySelectorAll('.rm:checked')].map(i => i.value);
   await run(btn, 'Saving roster…', 'Roster saved ✅', async () => {
     await api('setTripMembers', { tripId, memberIds });
@@ -733,12 +982,36 @@ async function addMember(btn) {
   if (!name) { toast('Type a name first', 'err', 3000); return; }
   await run(btn, 'Adding…', 'Member added ✅', async () => {
     const r = await api('createMember', { name });
-    $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Copy it from the Trips page or the People list.</small></div>`;
-    $('mName').value = '';
     await load(true);
+    $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Copy it from the member list below.</small></div>`;
   });
 }
 
+function inviteText(m) {
+  return `Hi ${m.Name}, you're invited to ${tripNameOf()} on Split Ledger.\nOpen: ${APP_URL}\nYour code: ${m.Code}`;
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+}
+
+async function copyInvite(btn) {
+  const m = S.members.find(x => x.MemberID === btn.dataset.id);
+  if (!m || !m.Code) { toast('No code for this person', 'err', 3000); return; }
+  await copyToClipboard(inviteText(m));
+  toast('Copied for ' + m.Name + ' ✅', 'ok', 2000);
+}
+
+// ---------- START ----------
 $('date').value = today();
 load();
 </script>
