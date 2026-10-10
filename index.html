@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Split Ledger">
+<title>Split Ledger</title>
+<style>
+:root{--navy:#1e3a5f;--teal:#0f9d8a;--red:#dc2626;--bg:#f4f6fa;--ink:#1f2937;--muted:#6b7280}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:0 0 90px}
+header{background:var(--navy);color:#fff;padding:14px 18px;font-size:19px;font-weight:700;position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center}
+header span{cursor:pointer;font-size:20px;min-width:24px}
+.tripbar{background:#fff;padding:10px 14px;border-bottom:1px solid #e5e7eb;position:sticky;top:52px;z-index:4}
+main{max-width:640px;margin:0 auto;padding:14px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+h3{margin:0 0 10px;color:var(--navy);font-size:17px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input,select{width:100%;padding:12px;font-size:16px;border:1px solid #d1d5db;border-radius:10px;background:#fff}
+input[type=checkbox]{width:auto}
+button{background:var(--teal);color:#fff;border:0;border-radius:10px;padding:13px;font-size:16px;font-weight:600;width:100%;margin-top:12px;cursor:pointer}
+button.sm{width:auto;margin:0;padding:8px 12px;font-size:14px}
+button.del{background:none;color:var(--red);width:auto;margin:0;padding:4px 8px;font-size:14px}
+button.ghost{background:#eef2f7;color:var(--ink)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #eef0f4;gap:8px}
+.row small{display:block;color:var(--muted)}
+.pos{color:var(--teal);font-weight:700}.neg{color:var(--red);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips label{margin:0;background:#eef2f7;color:var(--ink);padding:9px 14px;border-radius:20px;font-size:15px;display:flex;gap:6px;align-items:center}
+.lnk{font-size:13px;color:var(--navy)}
+.codebox{margin-top:12px;background:#ecfdf5;border-radius:10px;padding:12px;font-size:15px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;margin:0;border-radius:0;background:#fff;color:var(--muted);padding:12px 2px;font-size:12px}
+nav button.on{color:var(--navy);font-weight:700}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><span></span><span>💸 Split Ledger</span><span onclick="load()">⟳</span></header>
+<div class="tripbar"><select id="tripSel" onchange="pickTrip(this.value)"></select></div>
+
+<main>
+
+<div id="login" class="card hide">
+  <h3>Enter your code</h3>
+  <label>Your personal code (from the admin)</label>
+  <input id="code" autocapitalize="characters" autocomplete="off">
+  <button onclick="login()">Continue</button>
+</div>
+
+<div id="p-add" class="page hide">
+  <div class="card">
+    <h3>New expense</h3>
+    <label>Description</label><input id="desc" placeholder="Dinner, fuel, hotel...">
+    <label>Amount ($)</label><input id="amt" type="number" inputmode="decimal" step="0.01">
+    <label>Date</label><input id="date" type="date">
+    <label>Paid by</label><select id="paidBy"></select>
+    <label>Category</label>
+    <select id="cat">
+      <option>General</option><option>Travel</option><option>Food</option>
+      <option>Lodging</option><option>Fuel</option><option>Supplies</option>
+    </select>
+    <label>Receipt photo (optional)</label>
+    <input id="receipt" type="file" accept="image/*">
+    <label>Split between</label>
+    <div id="parts" class="chips"></div>
+    <button onclick="addExpense()">Save expense</button>
+  </div>
+</div>
+
+<div id="p-bal" class="page hide">
+  <div class="card"><h3>Who owes what</h3><div id="balList"></div></div>
+  <div class="card"><h3>Settle up (fewest payments)</h3><div id="settleList"></div></div>
+</div>
+
+<div id="p-hist" class="page hide">
+  <div class="card"><h3>Expenses</h3><div id="histList"></div></div>
+</div>
+
+<div id="p-trips" class="page hide">
+  <div class="card"><h3>Trips</h3><div id="tripList"></div></div>
+  <div class="card adminOnly">
+    <h3>New trip</h3>
+    <label>Name</label><input id="tName" placeholder="Atlanta conference">
+    <label>Type</label>
+    <select id="tType"><option>Business</option><option>Personal</option></select>
+    <label>Start date</label><input id="tStart" type="date">
+    <label>Members on this trip</label>
+    <div id="tMembers" class="chips"></div>
+    <button onclick="createTrip()">Create trip</button>
+  </div>
+  <div class="card adminOnly">
+    <h3>Edit members of selected trip</h3>
+    <div id="rosterChips" class="chips"></div>
+    <button onclick="saveRoster()">Save roster</button>
+  </div>
+</div>
+
+<div id="p-mem" class="page hide">
+  <div class="card adminOnly">
+    <h3>Add person</h3>
+    <label>Name</label><input id="mName" placeholder="Full name">
+    <button onclick="addMember()">Create and get code</button>
+    <div id="newCode"></div>
+  </div>
+  <div class="card"><h3>Everyone</h3><div id="memList"></div></div>
+  <div class="card"><button class="ghost" onclick="logout()">Log out on this device</button></div>
+</div>
+
+</main>
+
+<nav>
+  <button data-p="add" class="on" onclick="show('add')">➕ Add</button>
+  <button data-p="bal" onclick="show('bal')">⚖️ Balances</button>
+  <button data-p="hist" onclick="show('hist')">🧾 History</button>
+  <button data-p="trips" onclick="show('trips')">✈️ Trips</button>
+  <button data-p="mem" onclick="show('mem')">👥 People</button>
+</nav>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxheRnoxOQ0xR2YB6KIC2_LBtQzb9KNlay1W4Bqdhk7AAAH3DunGvo28EcdKxePmXBMFg/exec';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cents = x => Math.round(Number(x) * 100);
+const money = c => (c < 0 ? '-' : '') + '$' + (Math.abs(c) / 100).toFixed(2);
+const today = () => new Date().toLocaleDateString('en-CA');
+
+let S = { me: null, members: [], trips: [], tripMembers: [], expenses: [], splits: [] };
+let codeStore = localStorage.getItem('sl_code') || '';
+let tripId = localStorage.getItem('sl_trip') || '';
+let currentPage = 'add';
+
+const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id === 'ADMIN' ? 'Admin' : id);
+const isAdmin = () => !!(S.me && S.me.admin);
+const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
+const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
+
+function show(p) {
+  currentPage = p;
+  document.querySelectorAll('.page').forEach(x => x.classList.add('hide'));
+  $('login').classList.add('hide');
+  if (p === 'login') { $('login').classList.remove('hide'); return; }
+  $('p-' + p).classList.remove('hide');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+}
+
+function login() {
+  codeStore = $('code').value.trim().toUpperCase();
+  localStorage.setItem('sl_code', codeStore);
+  load();
+}
+
+function logout() {
+  localStorage.removeItem('sl_code');
+  codeStore = '';
+  show('login');
+}
+
+async function load() {
+  if (!codeStore) { show('login'); return; }
+  try {
+    const r = await fetch(API_URL + '?code=' + encodeURIComponent(codeStore));
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    S = j;
+    if (!S.trips.find(t => t.TripID === tripId)) tripId = S.trips.length ? S.trips[0].TripID : '';
+    localStorage.setItem('sl_trip', tripId);
+    render();
+    show(currentPage);
+  } catch (err) {
+    if (String(err.message).includes('Invalid code')) {
+      localStorage.removeItem('sl_code');
+      codeStore = '';
+      show('login');
+    }
+    alert(err.message);
+  }
+}
+
+async function api(action, payload) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ code: codeStore, action, ...payload })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+
+function pickTrip(id) {
+  tripId = id;
+  localStorage.setItem('sl_trip', id);
+  render();
+}
+
+// Net per person in cents. Positive = gets back, negative = owes.
+function balances() {
+  const net = {};
+  const add = (id, v) => { net[id] = (net[id] || 0) + v; };
+  tripMems().forEach(id => add(id, 0));
+  tripExp().forEach(e => add(e.PaidBy, cents(e.Amount)));
+  S.splits.filter(s => s.TripID === tripId).forEach(s => add(s.MemberID, -cents(s.Share)));
+  return net;
+}
+
+// Greedy settle-up: fewest payments that clear every balance.
+function settle(net) {
+  const debt = [], cred = [];
+  Object.entries(net).forEach(([id, v]) => {
+    if (v < 0) debt.push({ id, v: -v });
+    if (v > 0) cred.push({ id, v });
+  });
+  const result = [];
+  let i = 0, j = 0;
+  while (i < debt.length && j < cred.length) {
+    const amt = Math.min(debt[i].v, cred[j].v);
+    result.push({ from: debt[i].id, to: cred[j].id, amt });
+    debt[i].v -= amt;
+    cred[j].v -= amt;
+    if (debt[i].v === 0) i++;
+    if (cred[j].v === 0) j++;
+  }
+  return result;
+}
+
+function render() {
+  $('tripSel').innerHTML = S.trips.length
+    ? S.trips.map(t => `<option value="${esc(t.TripID)}" ${t.TripID === tripId ? 'selected' : ''}>${esc(t.Name)} (${esc(t.Type)})</option>`).join('')
+    : '<option value="">No trips yet. Create one in Trips.</option>';
+  document.querySelectorAll('.adminOnly').forEach(el => el.classList.toggle('hide', !isAdmin()));
+  renderAdd(); renderBal(); renderHist(); renderTrips(); renderPeople();
+}
+
+function renderAdd() {
+  const ids = tripMems();
+  const pool = isAdmin() ? ids : [S.me.MemberID];
+  $('paidBy').innerHTML = pool.map(id => `<option value="${esc(id)}">${esc(nameOf(id))}</option>`).join('');
+  if (pool.includes(S.me.MemberID)) $('paidBy').value = S.me.MemberID;
+  $('paidBy').disabled = !isAdmin();
+  $('parts').innerHTML = ids.map(id =>
+    `<label><input type="checkbox" value="${esc(id)}" checked>${esc(nameOf(id))}</label>`).join('')
+    || '<small>No members on this trip yet</small>';
+}
+
+function renderBal() {
+  const b = balances();
+  $('balList').innerHTML = Object.keys(b).map(id =>
+    `<div class="row"><span>${esc(nameOf(id))}</span><span class="${b[id] >= 0 ? 'pos' : 'neg'}">${b[id] >= 0 ? 'gets back ' : 'owes '}${money(Math.abs(b[id]))}</span></div>`
+  ).join('') || '<small>No expenses yet</small>';
+
+  const plan = settle(b);
+  $('settleList').innerHTML = plan.length
+    ? plan.map(p => {
+        const mine = isAdmin() || p.from === S.me.MemberID;
+        return `<div class="row"><span><b>${esc(nameOf(p.from))}</b> pays <b>${esc(nameOf(p.to))}</b><small>${money(p.amt)}</small></span>${mine ? `<button class="sm" onclick="settleUp('${esc(p.from)}','${esc(p.to)}',${p.amt})">Mark paid</button>` : ''}</div>`;
+      }).join('')
+    : '<small>Everyone is square ✅</small>';
+}
+
+function renderHist() {
+  $('histList').innerHTML = [...tripExp()].reverse().map(e => {
+    const mine = isAdmin() || e.EnteredBy === S.me.MemberID;
+    return `<div class="row">
+      <div><b>${esc(e.Description)}</b>
+        <small>${esc(e.Date)} · ${esc(nameOf(e.PaidBy))} paid ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
+        ${e.ReceiptURL ? `<a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 Receipt</a>` : ''}
+      </div>
+      ${mine ? `<button class="del" onclick="delExp('${esc(e.ExpenseID)}')">Delete</button>` : ''}
+    </div>`;
+  }).join('') || '<small>No expenses yet</small>';
+}
+
+function renderTrips() {
+  $('tripList').innerHTML = S.trips.map(t => {
+    const count = S.tripMembers.filter(x => x.TripID === t.TripID).length;
+    return `<div class="row" style="cursor:pointer" onclick="pickTrip('${esc(t.TripID)}')">
+      <div><b>${esc(t.Name)}</b><small>${esc(t.Type)} · ${esc(t.StartDate || 'no date')} · ${count} people</small></div>
+      ${t.TripID === tripId ? '<span class="pos">Selected</span>' : ''}
+    </div>`;
+  }).join('') || '<small>No trips yet</small>';
+
+  $('tMembers').innerHTML = S.members.map(m =>
+    `<label><input type="checkbox" class="tm" value="${esc(m.MemberID)}" checked>${esc(m.Name)}</label>`).join('');
+  $('rosterChips').innerHTML = S.members.map(m => {
+    const on = S.tripMembers.some(x => x.TripID === tripId && x.MemberID === m.MemberID);
+    return `<label><input type="checkbox" class="rm" value="${esc(m.MemberID)}" ${on ? 'checked' : ''}>${esc(m.Name)}</label>`;
+  }).join('');
+}
+
+function renderPeople() {
+  $('memList').innerHTML = S.members.map(m =>
+    `<div class="row"><div><b>${esc(m.Name)}</b>${m.Code ? `<small>Code: <code>${esc(m.Code)}</code></small>` : ''}</div></div>`
+  ).join('') || '<small>No people yet</small>';
+}
+
+async function addExpense() {
+  const desc = $('desc').value.trim();
+  const amt = parseFloat($('amt').value);
+  const people = [...document.querySelectorAll('#parts input:checked')].map(i => i.value);
+  if (!desc || !(amt > 0) || !people.length) {
+    alert('Add a description, an amount, and at least one person to split with.');
+    return;
+  }
+  const total = cents(amt);
+  const base = Math.floor(total / people.length);
+  const extra = total - base * people.length; // leftover pennies go to the first people
+  const shares = people.map((id, i) => ({ memberId: id, share: (base + (i < extra ? 1 : 0)) / 100 }));
+
+  try {
+    const f = $('receipt').files[0];
+    const receipt = f ? await compress(f) : null;
+    await api('addExpense', {
+      tripId, date: $('date').value || today(), description: desc,
+      paidBy: $('paidBy').value, amount: total / 100,
+      category: $('cat').value, shares, receipt
+    });
+    $('desc').value = ''; $('amt').value = ''; $('receipt').value = '';
+    show('bal');
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+// Shrinks phone photos before upload so they save fast and fit the limit.
+function compress(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s);
+      c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const data = c.toDataURL('image/jpeg', 0.8).split(',')[1];
+      URL.revokeObjectURL(url);
+      resolve({ name: (file.name || 'receipt').replace(/\.\w+$/, '') + '.jpg', mime: 'image/jpeg', data });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image')); };
+    img.src = url;
+  });
+}
+
+async function settleUp(from, to, amtCents) {
+  if (!confirm(`Record ${nameOf(from)} paying ${nameOf(to)} ${money(amtCents)}?`)) return;
+  try {
+    await api('addExpense', {
+      tripId, date: today(),
+      description: `Settle: ${nameOf(from)} → ${nameOf(to)}`,
+      paidBy: from, amount: amtCents / 100, category: 'Settlement',
+      shares: [{ memberId: to, share: amtCents / 100 }]
+    });
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+async function delExp(id) {
+  if (!confirm('Delete this expense?')) return;
+  try {
+    await api('deleteExpense', { id });
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+async function createTrip() {
+  const name = $('tName').value.trim();
+  if (!name) { alert('Name the trip.'); return; }
+  const memberIds = [...document.querySelectorAll('.tm:checked')].map(i => i.value);
+  try {
+    const r = await api('createTrip', { name, type: $('tType').value, startDate: $('tStart').value, memberIds });
+    tripId = r.tripId;
+    $('tName').value = '';
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+async function saveRoster() {
+  if (!tripId) return;
+  const memberIds = [...document.querySelectorAll('.rm:checked')].map(i => i.value);
+  try {
+    await api('setTripMembers', { tripId, memberIds });
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+async function addMember() {
+  const name = $('mName').value.trim();
+  if (!name) return;
+  try {
+    const r = await api('createMember', { name });
+    $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Send it privately. You can see it again on this screen.</small></div>`;
+    $('mName').value = '';
+    await load();
+  } catch (err) { alert(err.message); }
+}
+
+$('date').value = today();
+load();
+</script>
+</body>
+</html>
