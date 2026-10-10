@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Split Ledger">
 <title>Split Ledger</title>
 <style>
@@ -45,7 +46,7 @@ nav button.on{color:var(--navy);font-weight:700}
 <div id="login" class="card hide">
   <h3>Enter your code</h3>
   <label>Your personal code (from the admin)</label>
-  <input id="code" autocapitalize="characters" autocomplete="off">
+  <input id="code" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false">
   <button onclick="login()">Continue</button>
 </div>
 
