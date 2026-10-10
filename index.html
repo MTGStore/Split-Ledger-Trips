@@ -103,6 +103,12 @@ nav button.on{color:var(--navy);font-weight:700}
     <div id="rosterChips" class="chips"></div>
     <button onclick="saveRoster(this)">Save roster</button>
   </div>
+  <div class="card adminOnly">
+    <h3>Member codes for this trip</h3>
+    <small style="color:var(--muted)">Tap Copy and paste the message into a text or email. Only you can see these codes.</small>
+    <div id="tripCodes" style="margin-top:8px"></div>
+    <button class="ghost" onclick="copyAllInvites(this)">Copy all invite messages</button>
+  </div>
 </div>
 
 <div id="p-mem" class="page hide">
@@ -128,6 +134,7 @@ nav button.on{color:var(--navy);font-weight:700}
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxheRnoxOQ0xR2YB6KIC2_LBtQzb9KNlay1W4Bqdhk7AAAH3DunGvo28EcdKxePmXBMFg/exec';
+const APP_URL = 'https://mtgstore.github.io/Split-Ledger-Trips/';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -144,6 +151,7 @@ const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id 
 const isAdmin = () => !!(S.me && S.me.admin);
 const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
 const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
+const tripName = () => (S.trips.find(t => t.TripID === tripId) || {}).Name || 'your trip';
 
 // ---------- STATUS BANNER ----------
 function toast(msg, kind = 'ok', ms = 2500) {
@@ -267,7 +275,7 @@ function render() {
     ? S.trips.map(t => `<option value="${esc(t.TripID)}" ${t.TripID === tripId ? 'selected' : ''}>${esc(t.Name)} (${esc(t.Type)})</option>`).join('')
     : '<option value="">No trips yet. Create one in Trips.</option>';
   document.querySelectorAll('.adminOnly').forEach(el => el.classList.toggle('hide', !isAdmin()));
-  renderAdd(); renderBal(); renderHist(); renderTrips(); renderPeople();
+  renderAdd(); renderBal(); renderHist(); renderTrips(); renderTripCodes(); renderPeople();
 }
 
 function renderAdd() {
@@ -326,10 +334,55 @@ function renderTrips() {
   }).join('');
 }
 
+// Admin-only: one row per person on the selected trip, each with a Copy button.
+function renderTripCodes() {
+  if (!isAdmin()) return;
+  const people = tripMems().map(id => S.members.find(m => m.MemberID === id)).filter(Boolean);
+  $('tripCodes').innerHTML = people.map(m =>
+    `<div class="row">
+      <div><b>${esc(m.Name)}</b><small>Code: <code>${esc(m.Code || '')}</code></small></div>
+      <button class="sm ghost" data-id="${esc(m.MemberID)}" onclick="copyInvite(this)">Copy</button>
+    </div>`
+  ).join('') || '<small>Pick members for this trip above, then save the roster.</small>';
+}
+
 function renderPeople() {
   $('memList').innerHTML = S.members.map(m =>
     `<div class="row"><div><b>${esc(m.Name)}</b>${m.Code ? `<small>Code: <code>${esc(m.Code)}</code></small>` : ''}</div></div>`
   ).join('') || '<small>No people yet</small>';
+}
+
+// ---------- COPY HELPERS ----------
+function inviteText(m) {
+  return `Hi ${m.Name}, you're invited to ${tripName()} on Split Ledger.\nOpen: ${APP_URL}\nYour code: ${m.Code}`;
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    // Fallback for older Safari/Chrome contexts
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+}
+
+async function copyInvite(btn) {
+  const m = S.members.find(x => x.MemberID === btn.dataset.id);
+  if (!m || !m.Code) { toast('No code for this person', 'err', 3000); return; }
+  await copyToClipboard(inviteText(m));
+  toast('Copied for ' + m.Name + ' ✅', 'ok', 2000);
+}
+
+async function copyAllInvites(btn) {
+  const people = tripMems().map(id => S.members.find(m => m.MemberID === id)).filter(m => m && m.Code);
+  if (!people.length) { toast('No people on this trip yet', 'err', 3000); return; }
+  await copyToClipboard(people.map(inviteText).join('\n\n'));
+  toast(`Copied ${people.length} invite${people.length > 1 ? 's' : ''} ✅`, 'ok', 2000);
 }
 
 // ---------- ACTIONS ----------
@@ -428,7 +481,7 @@ async function addMember(btn) {
   if (!name) { toast('Type a name first', 'err', 3000); return; }
   await run(btn, 'Adding…', 'Member added ✅', async () => {
     const r = await api('createMember', { name });
-    $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Send it privately. You can see it again on this screen.</small></div>`;
+    $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Copy it from the Trips page or the People list.</small></div>`;
     $('mName').value = '';
     await load(true);
   });
