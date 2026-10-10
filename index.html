@@ -30,6 +30,7 @@ button.ghost{background:#eef2f7;color:var(--ink)}
 .pos{color:var(--teal);font-weight:700}.neg{color:var(--red);font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chips label{margin:0;background:#eef2f7;color:var(--ink);padding:9px 14px;border-radius:20px;font-size:15px;display:flex;gap:6px;align-items:center}
+.chipbar{width:100%;display:flex;gap:8px;margin-bottom:4px}
 .lnk{font-size:13px;color:var(--navy)}
 .codebox{margin-top:12px;background:#ecfdf5;border-radius:10px;padding:12px;font-size:15px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom)}
@@ -71,7 +72,7 @@ nav button.on{color:var(--navy);font-weight:700}
     </select>
     <label>Receipt photo (optional)</label>
     <input id="receipt" type="file" accept="image/*">
-    <label>Split between</label>
+    <label id="partLabel">Split between</label>
     <div id="parts" class="chips"></div>
     <button onclick="addExpense(this)">Save expense</button>
   </div>
@@ -105,9 +106,8 @@ nav button.on{color:var(--navy);font-weight:700}
   </div>
   <div class="card adminOnly">
     <h3>Member codes for this trip</h3>
-    <small style="color:var(--muted)">Tap Copy and paste the message into a text or email. Only you can see these codes.</small>
+    <small style="color:var(--muted)">Tap Copy and send each code privately, one person at a time. Only you can see these codes.</small>
     <div id="tripCodes" style="margin-top:8px"></div>
-    <button class="ghost" onclick="copyAllInvites(this)">Copy all invite messages</button>
   </div>
 </div>
 
@@ -146,6 +146,7 @@ let S = { me: null, members: [], trips: [], tripMembers: [], expenses: [], split
 let codeStore = localStorage.getItem('sl_code') || '';
 let tripId = localStorage.getItem('sl_trip') || '';
 let currentPage = 'add';
+let partSel = null; // null = everyone on the trip is checked; otherwise a Set of MemberIDs
 
 const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id === 'ADMIN' ? 'Admin' : id);
 const isAdmin = () => !!(S.me && S.me.admin);
@@ -196,6 +197,7 @@ function login() {
 function logout() {
   localStorage.removeItem('sl_code');
   codeStore = '';
+  partSel = null;
   hideToast();
   show('login');
 }
@@ -236,6 +238,7 @@ async function api(action, payload) {
 
 function pickTrip(id) {
   tripId = id;
+  partSel = null; // a new trip starts with everyone checked
   localStorage.setItem('sl_trip', id);
   render();
 }
@@ -281,13 +284,36 @@ function render() {
 function renderAdd() {
   const ids = tripMems();
   const pool = isAdmin() ? ids : [S.me.MemberID];
+  const oldPayer = $('paidBy').value;
+
   $('paidBy').innerHTML = pool.map(id => `<option value="${esc(id)}">${esc(nameOf(id))}</option>`).join('');
-  if (pool.includes(S.me.MemberID)) $('paidBy').value = S.me.MemberID;
+  if (oldPayer && pool.includes(oldPayer)) $('paidBy').value = oldPayer;
+  else if (pool.includes(S.me.MemberID)) $('paidBy').value = S.me.MemberID;
   $('paidBy').disabled = !isAdmin();
-  $('parts').innerHTML = ids.map(id =>
-    `<label><input type="checkbox" value="${esc(id)}" checked>${esc(nameOf(id))}</label>`).join('')
-    || '<small>No members on this trip yet</small>';
+
+  // Only keep people who are still on this trip in the selection
+  if (partSel) partSel = new Set([...partSel].filter(id => ids.includes(id)));
+  const checkedCount = ids.filter(id => !partSel || partSel.has(id)).length;
+
+  $('partLabel').textContent = `Split between (${checkedCount} of ${ids.length} selected)`;
+  $('parts').innerHTML = ids.length
+    ? `<div class="chipbar"><button type="button" class="sm ghost" onclick="setParts(true)">Select all</button><button type="button" class="sm ghost" onclick="setParts(false)">Clear</button></div>` +
+      ids.map(id => `<label><input type="checkbox" value="${esc(id)}" ${(!partSel || partSel.has(id)) ? 'checked' : ''}>${esc(nameOf(id))}</label>`).join('')
+    : '<small>No members on this trip yet</small>';
 }
+
+// Select all or clear the split group, then refresh the count
+function setParts(on) {
+  partSel = on ? new Set(tripMems()) : new Set();
+  renderAdd();
+}
+
+// Remember the group the user ticks so it carries over to the next expense
+$('parts').addEventListener('change', () => {
+  const ids = tripMems();
+  partSel = new Set([...document.querySelectorAll('#parts input:checked')].map(i => i.value));
+  $('partLabel').textContent = `Split between (${ids.filter(id => partSel.has(id)).length} of ${ids.length} selected)`;
+});
 
 function renderBal() {
   const b = balances();
@@ -378,13 +404,6 @@ async function copyInvite(btn) {
   toast('Copied for ' + m.Name + ' ✅', 'ok', 2000);
 }
 
-async function copyAllInvites(btn) {
-  const people = tripMems().map(id => S.members.find(m => m.MemberID === id)).filter(m => m && m.Code);
-  if (!people.length) { toast('No people on this trip yet', 'err', 3000); return; }
-  await copyToClipboard(people.map(inviteText).join('\n\n'));
-  toast(`Copied ${people.length} invite${people.length > 1 ? 's' : ''} ✅`, 'ok', 2000);
-}
-
 // ---------- ACTIONS ----------
 async function addExpense(btn) {
   const desc = $('desc').value.trim();
@@ -462,6 +481,7 @@ async function createTrip(btn) {
   await run(btn, 'Creating trip…', 'Trip created ✅', async () => {
     const r = await api('createTrip', { name, type: $('tType').value, startDate: $('tStart').value, memberIds });
     tripId = r.tripId;
+    partSel = null;
     $('tName').value = '';
     await load(true);
   });
