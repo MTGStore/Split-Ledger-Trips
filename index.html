@@ -41,8 +41,14 @@ button.ghost{background:#eef2f7;color:var(--ink)}
 .chips label{margin:0;background:#eef2f7;color:var(--ink);min-height:44px;padding:10px 14px;border-radius:22px;font-size:16px;display:flex;gap:8px;align-items:center}
 .chipbar{width:100%;display:flex;gap:10px;margin:2px 0 6px}
 .chipbar button{flex:1;margin:0}
+.prow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.prow label.pchk{margin:0;flex:1;display:flex;align-items:center;gap:10px;font-size:16px;color:var(--ink);min-height:44px}
+.prow input.pamt{width:130px;min-height:44px}
+.ro{font-size:16px;padding:10px 0}
+.hint{font-size:14px;color:var(--muted);margin-top:8px}
+.hint.pos{color:var(--teal);font-weight:700}
+.hint.neg{color:var(--red);font-weight:700}
 .lnk{font-size:15px;color:var(--navy);display:inline-block;padding:6px 0}
-.hint{font-size:14px;color:var(--muted);margin-top:6px;min-height:0}
 .editbanner{background:#fef3c7;color:#92400e;border-radius:12px;padding:10px 12px;font-weight:600;margin-bottom:8px}
 .codebox{margin-top:12px;background:#ecfdf5;border-radius:12px;padding:14px;font-size:16px}
 code{font-size:15px;word-break:break-all}
@@ -87,7 +93,8 @@ nav button.on{color:var(--navy);font-weight:700}
     <label>Description</label><input id="desc" placeholder="Dinner, fuel, hotel...">
     <label>Amount ($)</label><input id="amt" type="number" inputmode="decimal" step="0.01">
     <label>Date</label><input id="date" type="date">
-    <label>Paid by</label><select id="paidBy"></select>
+    <label>Paid by</label>
+    <div id="payerBox"></div>
     <label>Category</label>
     <select id="cat">
       <option>General</option><option>Travel</option><option>Food</option>
@@ -167,17 +174,20 @@ const cents = x => Math.round(Number(x) * 100);
 const money = c => (c < 0 ? '-' : '') + '$' + (Math.abs(c) / 100).toFixed(2);
 const today = () => new Date().toLocaleDateString('en-CA');
 
-let S = { me: null, members: [], trips: [], tripMembers: [], expenses: [], splits: [] };
+let S = { me: null, members: [], trips: [], tripMembers: [], expenses: [], splits: [], payments: [] };
 let codeStore = localStorage.getItem('sl_code') || '';
 let tripId = localStorage.getItem('sl_trip') || '';
 let currentPage = 'add';
-let partSel = null; // null = everyone on the trip is checked; otherwise a Set of MemberIDs
-let editId = null;  // ExpenseID being edited, or null when adding a new expense
+let partSel = null;  // null = everyone on the trip is checked; otherwise a Set of MemberIDs
+let payerSel = null; // admin only: Set of MemberIDs who paid
+let payerAmt = {};   // admin only: memberId -> amount typed (string)
+let editId = null;   // ExpenseID being edited, or null
 
 const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id === 'ADMIN' ? 'Admin' : id);
 const isAdmin = () => !!(S.me && S.me.admin);
 const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
 const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
+const paysOf = id => S.payments.filter(p => p.ExpenseID === id);
 const tripName = () => (S.trips.find(t => t.TripID === tripId) || {}).Name || 'your trip';
 const canEdit = e => isAdmin() || (e.EnteredBy === S.me.MemberID && e.Category !== 'Settlement');
 
@@ -238,7 +248,7 @@ async function load(silent = false) {
     const r = await fetch(API_URL + '?code=' + encodeURIComponent(codeStore));
     const j = await r.json();
     if (j.error) throw new Error(j.error);
-    S = j;
+    S = { ...j, payments: j.payments || [] };
     if (!S.trips.find(t => t.TripID === tripId)) tripId = S.trips.length ? S.trips[0].TripID : '';
     localStorage.setItem('sl_trip', tripId);
     render();
@@ -268,7 +278,9 @@ async function api(action, payload) {
 function pickTrip(id) {
   if (editId) resetForm();
   tripId = id;
-  partSel = null; // a new trip starts with everyone checked
+  partSel = null;
+  payerSel = null;
+  payerAmt = {};
   localStorage.setItem('sl_trip', id);
   render();
 }
@@ -278,7 +290,11 @@ function balances() {
   const net = {};
   const add = (id, v) => { net[id] = (net[id] || 0) + v; };
   tripMems().forEach(id => add(id, 0));
-  tripExp().forEach(e => add(e.PaidBy, cents(e.Amount)));
+  tripExp().forEach(e => {
+    const pays = paysOf(e.ExpenseID);
+    if (pays.length) pays.forEach(p => add(p.MemberID, cents(p.Amount)));
+    else add(e.PaidBy, cents(e.Amount));
+  });
   S.splits.filter(s => s.TripID === tripId).forEach(s => add(s.MemberID, -cents(s.Share)));
   return net;
 }
@@ -313,23 +329,84 @@ function render() {
 
 function renderAdd() {
   const ids = tripMems();
-  const pool = isAdmin() ? ids : [S.me.MemberID];
-  const oldPayer = $('paidBy').value;
 
-  $('paidBy').innerHTML = pool.map(id => `<option value="${esc(id)}">${esc(nameOf(id))}</option>`).join('');
-  if (oldPayer && pool.includes(oldPayer)) $('paidBy').value = oldPayer;
-  else if (pool.includes(S.me.MemberID)) $('paidBy').value = S.me.MemberID;
-  $('paidBy').disabled = !isAdmin();
-
-  // Only keep people who are still on this trip in the selection
+  // Split between
   if (partSel) partSel = new Set([...partSel].filter(id => ids.includes(id)));
   const checkedCount = ids.filter(id => !partSel || partSel.has(id)).length;
-
   $('partLabel').textContent = `Split between (${checkedCount} of ${ids.length} selected)`;
   $('parts').innerHTML = ids.length
     ? `<div class="chipbar"><button type="button" class="sm ghost" onclick="setParts(true)">Select all</button><button type="button" class="sm ghost" onclick="setParts(false)">Clear</button></div>` +
       ids.map(id => `<label><input type="checkbox" value="${esc(id)}" ${(!partSel || partSel.has(id)) ? 'checked' : ''}>${esc(nameOf(id))}</label>`).join('')
     : '<small>No members on this trip yet</small>';
+
+  renderPayers();
+}
+
+// Admin: choose any number of payers and the exact amount each one paid.
+// Members: always paid by themselves for the full amount.
+function renderPayers() {
+  const box = $('payerBox');
+  if (!isAdmin()) {
+    box.innerHTML = `<div class="ro">Paid by <b>${esc(S.me ? S.me.Name : 'you')}</b></div>`;
+    return;
+  }
+  const ids = tripMems();
+  if (!payerSel) payerSel = new Set(ids.length ? [ids[0]] : []);
+  payerSel = new Set([...payerSel].filter(id => ids.includes(id)));
+
+  // One payer: fill their amount with the full total if it's empty
+  const total = cents(parseFloat($('amt').value) || 0);
+  if (payerSel.size === 1) {
+    const id = [...payerSel][0];
+    if (!payerAmt[id] && total > 0) payerAmt[id] = (total / 100).toFixed(2);
+  }
+
+  box.innerHTML =
+    `<div class="chipbar"><button type="button" class="sm ghost" onclick="splitPayersEvenly()">Split payers evenly</button></div>` +
+    ids.map(id => {
+      const on = payerSel.has(id);
+      return `<div class="prow">
+        <label class="pchk"><input type="checkbox" class="pay" value="${esc(id)}" ${on ? 'checked' : ''}>${esc(nameOf(id))}</label>
+        <input class="pamt" data-id="${esc(id)}" type="number" inputmode="decimal" step="0.01" placeholder="0.00"
+          value="${on ? esc(payerAmt[id] || '') : ''}" ${on ? '' : 'disabled'}>
+      </div>`;
+    }).join('') +
+    `<div id="payHint" class="hint"></div>`;
+  updatePayHint();
+}
+
+function payTotals() {
+  const total = cents(parseFloat($('amt').value) || 0);
+  const paid = payerSel ? [...payerSel].reduce((t, id) => t + cents(parseFloat(payerAmt[id]) || 0), 0) : 0;
+  return { total, paid };
+}
+
+function updatePayHint() {
+  const el = $('payHint');
+  if (!el || !isAdmin() || !payerSel) return;
+  const { total, paid } = payTotals();
+  const diff = total - paid;
+  if (!payerSel.size) { el.className = 'hint neg'; el.textContent = 'Pick who paid.'; return; }
+  if (total > 0 && diff === 0) {
+    el.className = 'hint pos';
+    el.textContent = `Paid ${money(paid)} of ${money(total)} ✅`;
+  } else if (diff > 0) {
+    el.className = 'hint neg';
+    el.textContent = `Paid ${money(paid)} of ${money(total)}. ${money(diff)} still unassigned.`;
+  } else {
+    el.className = 'hint neg';
+    el.textContent = `Paid ${money(paid)} of ${money(total)}. ${money(-diff)} too much.`;
+  }
+}
+
+function splitPayersEvenly() {
+  const ids = payerSel ? [...payerSel] : [];
+  const total = cents(parseFloat($('amt').value) || 0);
+  if (!ids.length || !total) { toast('Pick payers and an amount first', 'err', 3000); return; }
+  const base = Math.floor(total / ids.length);
+  const extra = total - base * ids.length;
+  ids.forEach((id, i) => { payerAmt[id] = ((base + (i < extra ? 1 : 0)) / 100).toFixed(2); });
+  renderPayers();
 }
 
 // Select all or clear the split group, then refresh the count
@@ -343,6 +420,41 @@ $('parts').addEventListener('change', () => {
   const ids = tripMems();
   partSel = new Set([...document.querySelectorAll('#parts input:checked')].map(i => i.value));
   $('partLabel').textContent = `Split between (${ids.filter(id => partSel.has(id)).length} of ${ids.length} selected)`;
+});
+
+// Payer checkboxes: a newly ticked payer gets whatever is still unassigned
+$('payerBox').addEventListener('change', e => {
+  if (!e.target.classList.contains('pay')) return;
+  const id = e.target.value;
+  if (!payerSel) payerSel = new Set();
+  if (e.target.checked) {
+    const total = cents(parseFloat($('amt').value) || 0);
+    const others = [...payerSel].reduce((t, o) => t + cents(parseFloat(payerAmt[o]) || 0), 0);
+    const left = total - others;
+    payerSel.add(id);
+    payerAmt[id] = left > 0 ? (left / 100).toFixed(2) : '';
+  } else {
+    payerSel.delete(id);
+  }
+  renderPayers();
+});
+
+// Payer amounts: store as typed and refresh the hint without rebuilding the box
+$('payerBox').addEventListener('input', e => {
+  if (!e.target.classList.contains('pamt')) return;
+  payerAmt[e.target.dataset.id] = e.target.value;
+  updatePayHint();
+});
+
+// Total amount: with one payer, that payer follows the total automatically
+$('amt').addEventListener('input', () => {
+  if (isAdmin() && payerSel && payerSel.size === 1) {
+    const id = [...payerSel][0];
+    payerAmt[id] = $('amt').value;
+    const inp = document.querySelector(`.pamt[data-id="${id}"]`);
+    if (inp) inp.value = $('amt').value;
+  }
+  updatePayHint();
 });
 
 function renderBal() {
@@ -362,12 +474,16 @@ function renderBal() {
 
 function renderHist() {
   $('histList').innerHTML = [...tripExp()].reverse().map(e => {
+    const pays = paysOf(e.ExpenseID);
+    const payText = pays.length
+      ? pays.map(p => `${nameOf(p.MemberID)} ${money(cents(p.Amount))}`).join(', ')
+      : `${nameOf(e.PaidBy)} ${money(cents(e.Amount))}`;
     const mine = isAdmin() || e.EnteredBy === S.me.MemberID;
     const editable = canEdit(e);
     const id = esc(e.ExpenseID);
     return `<div class="row">
       <div><b>${esc(e.Description)}</b>
-        <small>${esc(e.Date)} · ${esc(nameOf(e.PaidBy))} paid ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
+        <small>${esc(e.Date)} · Paid: ${esc(payText)} · Total ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
         ${e.ReceiptURL ? `<a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 Receipt</a>` : ''}
       </div>
       ${(editable || mine) ? `<div class="acts">
@@ -422,7 +538,6 @@ async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
   } catch (e) {
-    // Fallback for older Safari/Chrome contexts
     const ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
@@ -449,13 +564,18 @@ function editExp(id) {
   $('amt').value = Number(e.Amount).toFixed(2);
   $('date').value = e.Date || today();
 
-  // Make sure a category like "Settlement" is still selectable
   if (![...$('cat').options].some(o => o.value === e.Category)) $('cat').add(new Option(e.Category, e.Category));
   $('cat').value = e.Category || 'General';
 
+  // Payers: load the exact amounts saved for this expense
+  const pays = paysOf(id);
+  payerSel = new Set(pays.length ? pays.map(p => p.MemberID) : [e.PaidBy]);
+  payerAmt = {};
+  if (pays.length) pays.forEach(p => { payerAmt[p.MemberID] = Number(p.Amount).toFixed(2); });
+  else payerAmt[e.PaidBy] = Number(e.Amount).toFixed(2);
+
   partSel = new Set(S.splits.filter(s => s.ExpenseID === id).map(s => s.MemberID));
   renderAdd();
-  if (isAdmin()) $('paidBy').value = e.PaidBy;
 
   $('receipt').value = '';
   $('receiptNote').textContent = e.ReceiptURL ? 'Current receipt is kept unless you pick a new photo.' : '';
@@ -470,6 +590,8 @@ function editExp(id) {
 
 function resetForm() {
   editId = null;
+  payerSel = null;
+  payerAmt = {};
   $('desc').value = '';
   $('amt').value = '';
   $('date').value = today();
@@ -499,8 +621,25 @@ async function saveExpense(btn) {
     return;
   }
   const total = cents(amt);
+
+  let payers;
+  if (isAdmin()) {
+    payers = payerSel
+      ? [...payerSel].map(id => ({ memberId: id, amount: cents(parseFloat(payerAmt[id]) || 0) / 100 })).filter(p => p.amount > 0)
+      : [];
+    if (!payers.length) { toast('Pick who paid', 'err', 4000); return; }
+    const paid = payers.reduce((t, p) => t + cents(p.amount), 0);
+    if (paid !== total) {
+      toast(`Payers add to ${money(paid)} but the total is ${money(total)}`, 'err', 4500);
+      return;
+    }
+  } else {
+    payers = [{ memberId: S.me.MemberID, amount: total / 100 }];
+  }
+
+  // Equal split among the people checked under Split between
   const base = Math.floor(total / people.length);
-  const extra = total - base * people.length; // leftover pennies go to the first people
+  const extra = total - base * people.length;
   const shares = people.map((id, i) => ({ memberId: id, share: (base + (i < extra ? 1 : 0)) / 100 }));
 
   const editing = !!editId;
@@ -511,7 +650,7 @@ async function saveExpense(btn) {
     const receipt = f ? await compress(f) : null;
     const payload = {
       tripId, date: $('date').value || today(), description: desc,
-      paidBy: $('paidBy').value, amount: total / 100,
+      payers, amount: total / 100,
       category: $('cat').value, shares, receipt
     };
     if (editing) await api('updateExpense', { ...payload, id: idToEdit });
@@ -549,7 +688,8 @@ async function settleUp(btn, from, to, amtCents) {
     await api('addExpense', {
       tripId, date: today(),
       description: `Settle: ${nameOf(from)} → ${nameOf(to)}`,
-      paidBy: from, amount: amtCents / 100, category: 'Settlement',
+      payers: [{ memberId: from, amount: amtCents / 100 }],
+      amount: amtCents / 100, category: 'Settlement',
       shares: [{ memberId: to, share: amtCents / 100 }]
     });
     await load(true);
@@ -573,6 +713,7 @@ async function createTrip(btn) {
     const r = await api('createTrip', { name, type: $('tType').value, startDate: $('tStart').value, memberIds });
     tripId = r.tripId;
     partSel = null;
+    payerSel = null;
     $('tName').value = '';
     await load(true);
   });
