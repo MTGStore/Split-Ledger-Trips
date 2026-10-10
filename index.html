@@ -21,6 +21,7 @@ label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
 input,select{width:100%;padding:12px;font-size:16px;border:1px solid #d1d5db;border-radius:10px;background:#fff}
 input[type=checkbox]{width:auto}
 button{background:var(--teal);color:#fff;border:0;border-radius:10px;padding:13px;font-size:16px;font-weight:600;width:100%;margin-top:12px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
 button.sm{width:auto;margin:0;padding:8px 12px;font-size:14px}
 button.del{background:none;color:var(--red);width:auto;margin:0;padding:4px 8px;font-size:14px}
 button.ghost{background:#eef2f7;color:var(--ink)}
@@ -35,11 +36,17 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-t
 nav button{flex:1;margin:0;border-radius:0;background:#fff;color:var(--muted);padding:12px 2px;font-size:12px}
 nav button.on{color:var(--navy);font-weight:700}
 .hide{display:none!important}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-12px);background:#1f2937;color:#fff;padding:12px 18px;border-radius:10px;font-size:15px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:20;pointer-events:none;max-width:92%;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{background:var(--teal)}
+#toast.err{background:var(--red)}
+#toast.busy{background:var(--navy)}
 </style>
 </head>
 <body>
 <header><span></span><span>💸 Split Ledger</span><span onclick="load()">⟳</span></header>
 <div class="tripbar"><select id="tripSel" onchange="pickTrip(this.value)"></select></div>
+<div id="toast"></div>
 
 <main>
 
@@ -66,7 +73,7 @@ nav button.on{color:var(--navy);font-weight:700}
     <input id="receipt" type="file" accept="image/*">
     <label>Split between</label>
     <div id="parts" class="chips"></div>
-    <button onclick="addExpense()">Save expense</button>
+    <button onclick="addExpense(this)">Save expense</button>
   </div>
 </div>
 
@@ -89,12 +96,12 @@ nav button.on{color:var(--navy);font-weight:700}
     <label>Start date</label><input id="tStart" type="date">
     <label>Members on this trip</label>
     <div id="tMembers" class="chips"></div>
-    <button onclick="createTrip()">Create trip</button>
+    <button onclick="createTrip(this)">Create trip</button>
   </div>
   <div class="card adminOnly">
     <h3>Edit members of selected trip</h3>
     <div id="rosterChips" class="chips"></div>
-    <button onclick="saveRoster()">Save roster</button>
+    <button onclick="saveRoster(this)">Save roster</button>
   </div>
 </div>
 
@@ -102,7 +109,7 @@ nav button.on{color:var(--navy);font-weight:700}
   <div class="card adminOnly">
     <h3>Add person</h3>
     <label>Name</label><input id="mName" placeholder="Full name">
-    <button onclick="addMember()">Create and get code</button>
+    <button onclick="addMember(this)">Create and get code</button>
     <div id="newCode"></div>
   </div>
   <div class="card"><h3>Everyone</h3><div id="memList"></div></div>
@@ -138,6 +145,31 @@ const isAdmin = () => !!(S.me && S.me.admin);
 const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
 const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
 
+// ---------- STATUS BANNER ----------
+function toast(msg, kind = 'ok', ms = 2500) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + kind;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.className = ''; }, ms);
+}
+function hideToast() { $('toast').className = ''; }
+
+// Disables the button, shows a busy banner, then a success or error banner.
+async function run(btn, busyText, doneText, fn) {
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = busyText; }
+  toast(busyText, 'busy', 30000);
+  try {
+    await fn();
+    toast(doneText, 'ok');
+  } catch (err) {
+    toast('Not saved: ' + err.message, 'err', 4500);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldText; }
+  }
+}
+
 function show(p) {
   currentPage = p;
   document.querySelectorAll('.page').forEach(x => x.classList.add('hide'));
@@ -156,11 +188,13 @@ function login() {
 function logout() {
   localStorage.removeItem('sl_code');
   codeStore = '';
+  hideToast();
   show('login');
 }
 
-async function load() {
+async function load(silent = false) {
   if (!codeStore) { show('login'); return; }
+  if (!silent) toast('Loading…', 'busy', 15000);
   try {
     const r = await fetch(API_URL + '?code=' + encodeURIComponent(codeStore));
     const j = await r.json();
@@ -170,13 +204,14 @@ async function load() {
     localStorage.setItem('sl_trip', tripId);
     render();
     show(currentPage);
+    if (!silent) toast('Up to date ✓', 'ok', 1500);
   } catch (err) {
     if (String(err.message).includes('Invalid code')) {
       localStorage.removeItem('sl_code');
       codeStore = '';
       show('login');
     }
-    alert(err.message);
+    toast('Could not load: ' + err.message, 'err', 4500);
   }
 }
 
@@ -256,7 +291,7 @@ function renderBal() {
   $('settleList').innerHTML = plan.length
     ? plan.map(p => {
         const mine = isAdmin() || p.from === S.me.MemberID;
-        return `<div class="row"><span><b>${esc(nameOf(p.from))}</b> pays <b>${esc(nameOf(p.to))}</b><small>${money(p.amt)}</small></span>${mine ? `<button class="sm" onclick="settleUp('${esc(p.from)}','${esc(p.to)}',${p.amt})">Mark paid</button>` : ''}</div>`;
+        return `<div class="row"><span><b>${esc(nameOf(p.from))}</b> pays <b>${esc(nameOf(p.to))}</b><small>${money(p.amt)}</small></span>${mine ? `<button class="sm" onclick="settleUp(this,'${esc(p.from)}','${esc(p.to)}',${p.amt})">Mark paid</button>` : ''}</div>`;
       }).join('')
     : '<small>Everyone is square ✅</small>';
 }
@@ -269,7 +304,7 @@ function renderHist() {
         <small>${esc(e.Date)} · ${esc(nameOf(e.PaidBy))} paid ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
         ${e.ReceiptURL ? `<a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 Receipt</a>` : ''}
       </div>
-      ${mine ? `<button class="del" onclick="delExp('${esc(e.ExpenseID)}')">Delete</button>` : ''}
+      ${mine ? `<button class="del" onclick="delExp(this,'${esc(e.ExpenseID)}')">Delete</button>` : ''}
     </div>`;
   }).join('') || '<small>No expenses yet</small>';
 }
@@ -297,12 +332,14 @@ function renderPeople() {
   ).join('') || '<small>No people yet</small>';
 }
 
-async function addExpense() {
+// ---------- ACTIONS ----------
+async function addExpense(btn) {
   const desc = $('desc').value.trim();
   const amt = parseFloat($('amt').value);
   const people = [...document.querySelectorAll('#parts input:checked')].map(i => i.value);
+  if (!tripId) { toast('Create or pick a trip first', 'err', 4000); return; }
   if (!desc || !(amt > 0) || !people.length) {
-    alert('Add a description, an amount, and at least one person to split with.');
+    toast('Add a description, an amount, and at least one person', 'err', 4000);
     return;
   }
   const total = cents(amt);
@@ -310,7 +347,7 @@ async function addExpense() {
   const extra = total - base * people.length; // leftover pennies go to the first people
   const shares = people.map((id, i) => ({ memberId: id, share: (base + (i < extra ? 1 : 0)) / 100 }));
 
-  try {
+  await run(btn, 'Saving…', 'Expense saved ✅', async () => {
     const f = $('receipt').files[0];
     const receipt = f ? await compress(f) : null;
     await api('addExpense', {
@@ -320,8 +357,8 @@ async function addExpense() {
     });
     $('desc').value = ''; $('amt').value = ''; $('receipt').value = '';
     show('bal');
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
 // Shrinks phone photos before upload so they save fast and fit the limit.
@@ -344,57 +381,57 @@ function compress(file) {
   });
 }
 
-async function settleUp(from, to, amtCents) {
+async function settleUp(btn, from, to, amtCents) {
   if (!confirm(`Record ${nameOf(from)} paying ${nameOf(to)} ${money(amtCents)}?`)) return;
-  try {
+  await run(btn, 'Recording…', 'Payment recorded ✅', async () => {
     await api('addExpense', {
       tripId, date: today(),
       description: `Settle: ${nameOf(from)} → ${nameOf(to)}`,
       paidBy: from, amount: amtCents / 100, category: 'Settlement',
       shares: [{ memberId: to, share: amtCents / 100 }]
     });
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
-async function delExp(id) {
+async function delExp(btn, id) {
   if (!confirm('Delete this expense?')) return;
-  try {
+  await run(btn, 'Deleting…', 'Expense deleted 🗑️', async () => {
     await api('deleteExpense', { id });
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
-async function createTrip() {
+async function createTrip(btn) {
   const name = $('tName').value.trim();
-  if (!name) { alert('Name the trip.'); return; }
+  if (!name) { toast('Name the trip first', 'err', 3000); return; }
   const memberIds = [...document.querySelectorAll('.tm:checked')].map(i => i.value);
-  try {
+  await run(btn, 'Creating trip…', 'Trip created ✅', async () => {
     const r = await api('createTrip', { name, type: $('tType').value, startDate: $('tStart').value, memberIds });
     tripId = r.tripId;
     $('tName').value = '';
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
-async function saveRoster() {
-  if (!tripId) return;
+async function saveRoster(btn) {
+  if (!tripId) { toast('Pick a trip first', 'err', 3000); return; }
   const memberIds = [...document.querySelectorAll('.rm:checked')].map(i => i.value);
-  try {
+  await run(btn, 'Saving roster…', 'Roster saved ✅', async () => {
     await api('setTripMembers', { tripId, memberIds });
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
-async function addMember() {
+async function addMember(btn) {
   const name = $('mName').value.trim();
-  if (!name) return;
-  try {
+  if (!name) { toast('Type a name first', 'err', 3000); return; }
+  await run(btn, 'Adding…', 'Member added ✅', async () => {
     const r = await api('createMember', { name });
     $('newCode').innerHTML = `<div class="codebox">${esc(name)}'s code: <b>${esc(r.code)}</b><br><small>Send it privately. You can see it again on this screen.</small></div>`;
     $('mName').value = '';
-    await load();
-  } catch (err) { alert(err.message); }
+    await load(true);
+  });
 }
 
 $('date').value = today();
