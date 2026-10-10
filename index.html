@@ -34,12 +34,16 @@ button.ghost{background:#eef2f7;color:var(--ink)}
 .row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;min-height:56px;padding:12px 0;border-bottom:1px solid #eef0f4;gap:8px}
 .row>div,.row>span:first-child{flex:1;min-width:0;word-wrap:break-word}
 .row small{display:block;color:var(--muted);font-size:14px}
+.acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.acts button{width:auto;margin:0}
 .pos{color:var(--teal);font-weight:700}.neg{color:var(--red);font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .chips label{margin:0;background:#eef2f7;color:var(--ink);min-height:44px;padding:10px 14px;border-radius:22px;font-size:16px;display:flex;gap:8px;align-items:center}
 .chipbar{width:100%;display:flex;gap:10px;margin:2px 0 6px}
 .chipbar button{flex:1;margin:0}
 .lnk{font-size:15px;color:var(--navy);display:inline-block;padding:6px 0}
+.hint{font-size:14px;color:var(--muted);margin-top:6px;min-height:0}
+.editbanner{background:#fef3c7;color:#92400e;border-radius:12px;padding:10px 12px;font-weight:600;margin-bottom:8px}
 .codebox{margin-top:12px;background:#ecfdf5;border-radius:12px;padding:14px;font-size:16px}
 code{font-size:15px;word-break:break-all}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #ddd;padding-bottom:env(safe-area-inset-bottom);z-index:6}
@@ -78,7 +82,8 @@ nav button.on{color:var(--navy);font-weight:700}
 
 <div id="p-add" class="page hide">
   <div class="card">
-    <h3>New expense</h3>
+    <h3 id="formTitle">New expense</h3>
+    <div id="editBanner" class="editbanner hide"></div>
     <label>Description</label><input id="desc" placeholder="Dinner, fuel, hotel...">
     <label>Amount ($)</label><input id="amt" type="number" inputmode="decimal" step="0.01">
     <label>Date</label><input id="date" type="date">
@@ -90,9 +95,11 @@ nav button.on{color:var(--navy);font-weight:700}
     </select>
     <label>Receipt photo (optional)</label>
     <input id="receipt" type="file" accept="image/*">
+    <div id="receiptNote" class="hint"></div>
     <label id="partLabel">Split between</label>
     <div id="parts" class="chips"></div>
-    <button onclick="addExpense(this)">Save expense</button>
+    <button id="saveBtn" data-idle="Save expense" onclick="saveExpense(this)">Save expense</button>
+    <button id="cancelEdit" class="ghost hide" onclick="cancelEdit()">Cancel edit</button>
   </div>
 </div>
 
@@ -165,12 +172,14 @@ let codeStore = localStorage.getItem('sl_code') || '';
 let tripId = localStorage.getItem('sl_trip') || '';
 let currentPage = 'add';
 let partSel = null; // null = everyone on the trip is checked; otherwise a Set of MemberIDs
+let editId = null;  // ExpenseID being edited, or null when adding a new expense
 
 const nameOf = id => (S.members.find(m => m.MemberID === id) || {}).Name || (id === 'ADMIN' ? 'Admin' : id);
 const isAdmin = () => !!(S.me && S.me.admin);
 const tripMems = () => S.tripMembers.filter(x => x.TripID === tripId).map(x => x.MemberID);
 const tripExp = () => S.expenses.filter(x => x.TripID === tripId);
 const tripName = () => (S.trips.find(t => t.TripID === tripId) || {}).Name || 'your trip';
+const canEdit = e => isAdmin() || (e.EnteredBy === S.me.MemberID && e.Category !== 'Settlement');
 
 // ---------- STATUS BANNER ----------
 function toast(msg, kind = 'ok', ms = 2500) {
@@ -193,7 +202,7 @@ async function run(btn, busyText, doneText, fn) {
   } catch (err) {
     toast('Not saved: ' + err.message, 'err', 4500);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = oldText; }
+    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.idle || oldText; }
   }
 }
 
@@ -217,6 +226,7 @@ function logout() {
   localStorage.removeItem('sl_code');
   codeStore = '';
   partSel = null;
+  resetForm();
   hideToast();
   show('login');
 }
@@ -256,6 +266,7 @@ async function api(action, payload) {
 }
 
 function pickTrip(id) {
+  if (editId) resetForm();
   tripId = id;
   partSel = null; // a new trip starts with everyone checked
   localStorage.setItem('sl_trip', id);
@@ -352,12 +363,17 @@ function renderBal() {
 function renderHist() {
   $('histList').innerHTML = [...tripExp()].reverse().map(e => {
     const mine = isAdmin() || e.EnteredBy === S.me.MemberID;
+    const editable = canEdit(e);
+    const id = esc(e.ExpenseID);
     return `<div class="row">
       <div><b>${esc(e.Description)}</b>
         <small>${esc(e.Date)} · ${esc(nameOf(e.PaidBy))} paid ${money(cents(e.Amount))} · ${esc(e.Category)} · added by ${esc(nameOf(e.EnteredBy))}</small>
         ${e.ReceiptURL ? `<a class="lnk" href="${esc(e.ReceiptURL)}" target="_blank" rel="noopener">📎 Receipt</a>` : ''}
       </div>
-      ${mine ? `<button class="del" onclick="delExp(this,'${esc(e.ExpenseID)}')">Delete</button>` : ''}
+      ${(editable || mine) ? `<div class="acts">
+        ${editable ? `<button class="sm ghost" onclick="editExp('${id}')">Edit</button>` : ''}
+        ${mine ? `<button class="del" onclick="delExp(this,'${id}')">Delete</button>` : ''}
+      </div>` : ''}
     </div>`;
   }).join('') || '<small>No expenses yet</small>';
 }
@@ -423,8 +439,57 @@ async function copyInvite(btn) {
   toast('Copied for ' + m.Name + ' ✅', 'ok', 2000);
 }
 
+// ---------- EDIT MODE ----------
+function editExp(id) {
+  const e = S.expenses.find(x => x.ExpenseID === id);
+  if (!e) { toast('Expense not found', 'err', 3000); return; }
+
+  editId = id;
+  $('desc').value = e.Description;
+  $('amt').value = Number(e.Amount).toFixed(2);
+  $('date').value = e.Date || today();
+
+  // Make sure a category like "Settlement" is still selectable
+  if (![...$('cat').options].some(o => o.value === e.Category)) $('cat').add(new Option(e.Category, e.Category));
+  $('cat').value = e.Category || 'General';
+
+  partSel = new Set(S.splits.filter(s => s.ExpenseID === id).map(s => s.MemberID));
+  renderAdd();
+  if (isAdmin()) $('paidBy').value = e.PaidBy;
+
+  $('receipt').value = '';
+  $('receiptNote').textContent = e.ReceiptURL ? 'Current receipt is kept unless you pick a new photo.' : '';
+  $('formTitle').textContent = 'Edit expense';
+  $('editBanner').textContent = `Editing: ${e.Description}`;
+  $('editBanner').classList.remove('hide');
+  $('cancelEdit').classList.remove('hide');
+  $('saveBtn').dataset.idle = 'Update expense';
+  $('saveBtn').textContent = 'Update expense';
+  show('add');
+}
+
+function resetForm() {
+  editId = null;
+  $('desc').value = '';
+  $('amt').value = '';
+  $('date').value = today();
+  $('receipt').value = '';
+  $('receiptNote').textContent = '';
+  $('formTitle').textContent = 'New expense';
+  $('editBanner').classList.add('hide');
+  $('cancelEdit').classList.add('hide');
+  $('saveBtn').dataset.idle = 'Save expense';
+  $('saveBtn').textContent = 'Save expense';
+}
+
+function cancelEdit() {
+  resetForm();
+  renderAdd();
+  toast('Edit cancelled', 'ok', 1800);
+}
+
 // ---------- ACTIONS ----------
-async function addExpense(btn) {
+async function saveExpense(btn) {
   const desc = $('desc').value.trim();
   const amt = parseFloat($('amt').value);
   const people = [...document.querySelectorAll('#parts input:checked')].map(i => i.value);
@@ -438,15 +503,21 @@ async function addExpense(btn) {
   const extra = total - base * people.length; // leftover pennies go to the first people
   const shares = people.map((id, i) => ({ memberId: id, share: (base + (i < extra ? 1 : 0)) / 100 }));
 
-  await run(btn, 'Saving…', 'Expense saved ✅', async () => {
+  const editing = !!editId;
+  const idToEdit = editId;
+
+  await run(btn, editing ? 'Updating…' : 'Saving…', editing ? 'Expense updated ✅' : 'Expense saved ✅', async () => {
     const f = $('receipt').files[0];
     const receipt = f ? await compress(f) : null;
-    await api('addExpense', {
+    const payload = {
       tripId, date: $('date').value || today(), description: desc,
       paidBy: $('paidBy').value, amount: total / 100,
       category: $('cat').value, shares, receipt
-    });
-    $('desc').value = ''; $('amt').value = ''; $('receipt').value = '';
+    };
+    if (editing) await api('updateExpense', { ...payload, id: idToEdit });
+    else await api('addExpense', payload);
+
+    resetForm();
     show('bal');
     await load(true);
   });
@@ -489,6 +560,7 @@ async function delExp(btn, id) {
   if (!confirm('Delete this expense?')) return;
   await run(btn, 'Deleting…', 'Expense deleted 🗑️', async () => {
     await api('deleteExpense', { id });
+    if (editId === id) resetForm();
     await load(true);
   });
 }
